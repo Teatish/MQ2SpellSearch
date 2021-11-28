@@ -5,6 +5,12 @@
 // are shown below. Remove the ones your plugin does not use.  Always use Initialize
 // and Shutdown for setup and cleanup.
 
+/*
+* Used to filter spells to get a list.
+* Example: /spellsearch MinLevel 100 MaxLevel 115 Category 125 IgnoreRank
+* would output a list to the mq2chatwnd (or console) that met the above requirements
+*/
+
 #include <mq/Plugin.h>
 
 PreSetup("MQ2SpellSearch");
