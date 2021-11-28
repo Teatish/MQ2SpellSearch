@@ -25,6 +25,7 @@ bool SpellMatchesSearch(pSpellSearch pSpellSearch, const PSPAWNINFO pChar, const
 void ClearSpellSearch(pSpellSearch pSpellSearch);
 char* ParseSpellSearchArgs(char* szArg, char* szRest, pSpellSearch pSpellSearch);
 void ParseSpellSearch(const char* Buffer, pSpellSearch pSpellSearch);
+void SpellSearchCmd(PlayerClient* you, char* szLine);
 
 /**
  * @fn InitializePlugin
@@ -198,6 +199,7 @@ char* ParseSpellSearchArgs(char* szArg, char* szRest, pSpellSearch pSpellSearch)
 	return szRest;
 }
 
+bool bDebugMatch = false;
 bool SpellMatchesSearch(pSpellSearch pSpellSearch, const PSPAWNINFO pChar, const PSPELL pSpell) {
 	//Cat / Category
 	if (pSpellSearch->Category != -1) {
@@ -208,7 +210,7 @@ bool SpellMatchesSearch(pSpellSearch pSpellSearch, const PSPAWNINFO pChar, const
 	//SubCat / SubCategory
 	if (pSpellSearch->SubCategory != -1) {
 		if (pSpell->Subcategory != pSpellSearch->SubCategory) {
-			WriteChatf("\ag%s\ax Wrong SubCategory %i != %i.", pSpell->Name, pSpell->Subcategory, pSpellSearch->SubCategory);
+			if (bDebugMatch) WriteChatf("\ag%s\ax Wrong SubCategory %i != %i.", pSpell->Name, pSpell->Subcategory, pSpellSearch->SubCategory);
 			return false;
 		}
 	}
@@ -220,7 +222,7 @@ bool SpellMatchesSearch(pSpellSearch pSpellSearch, const PSPAWNINFO pChar, const
 			case 255:
 				break;
 			default:
-				WriteChatf("\ag%s\ax Below Level %i < %i.", pSpell->Name, pSpell->ClassLevel[GetPcProfile()->Class], pSpellSearch->MinLevel);
+				if (bDebugMatch) WriteChatf("\ag%s\ax Below Level %i < %i.", pSpell->Name, pSpell->ClassLevel[GetPcProfile()->Class], pSpellSearch->MinLevel);
 				break;
 		}
 		return false;
@@ -233,7 +235,7 @@ bool SpellMatchesSearch(pSpellSearch pSpellSearch, const PSPAWNINFO pChar, const
 			case 255:
 				break;
 			default:
-				WriteChatf("\ag%s\ax Exceeds Level %i > %i.", pSpell->Name, pSpell->ClassLevel[GetPcProfile()->Class], pSpellSearch->MaxLevel);
+				if (bDebugMatch) WriteChatf("\ag%s\ax Exceeds Level %i > %i.", pSpell->Name, pSpell->ClassLevel[GetPcProfile()->Class], pSpellSearch->MaxLevel);
 				break;
 		}
 		return false;
@@ -242,7 +244,7 @@ bool SpellMatchesSearch(pSpellSearch pSpellSearch, const PSPAWNINFO pChar, const
 	//Timer
 	if (pSpellSearch->Timer != -1) {
 		if (pSpellSearch->Timer != pSpell->ReuseTimerIndex) {
-			WriteChatf("\ag%s is the wrong timer", pSpell->Name);
+			if (bDebugMatch) WriteChatf("\ag%s is the wrong timer", pSpell->Name);
 			return false;
 		}
 	}
@@ -261,7 +263,7 @@ bool SpellMatchesSearch(pSpellSearch pSpellSearch, const PSPAWNINFO pChar, const
 		}
 
 		if (!bFound) {
-			WriteChatf("SPA not found");
+			if (bDebugMatch) WriteChatf("SPA not found");
 			return false;
 		}
 	}
@@ -273,7 +275,7 @@ bool SpellMatchesSearch(pSpellSearch pSpellSearch, const PSPAWNINFO pChar, const
 	}
 
 	if (pSpellSearch->CanScribe && pSpell->CannotBeScribed) {
-		WriteChatf("\ag%s\ax Cannot be Scribed", pSpell->Name);
+		if (bDebugMatch) WriteChatf("\ag%s\ax Cannot be Scribed", pSpell->Name);
 		return false;
 	}
 
