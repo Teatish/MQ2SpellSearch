@@ -19,12 +19,12 @@ typedef struct SpellSearch {
 	int SPA;
 	bool IgnoreRank;
 	bool CanScribe;
-} SpellSearch, * pSpellSearch;
+};
 
-bool SpellMatchesSearch(pSpellSearch pSpellSearch, const PSPAWNINFO pChar, const PSPELL pSpell);
-void ClearSpellSearch(pSpellSearch pSpellSearch);
-char* ParseSpellSearchArgs(char* szArg, char* szRest, pSpellSearch pSpellSearch);
-void ParseSpellSearch(const char* Buffer, pSpellSearch pSpellSearch);
+bool SpellMatchesSearch(SpellSearch* pSpellSearch, const PSPAWNINFO pChar, const PSPELL pSpell);
+void ClearSpellSearch(SpellSearch* pSpellSearch);
+char* ParseSpellSearchArgs(char* szArg, char* szRest, SpellSearch* pSpellSearch);
+void ParseSpellSearch(const char* Buffer, SpellSearch* pSpellSearch);
 void SpellSearchCmd(PlayerClient* you, char* szLine);
 
 /**
@@ -133,7 +133,7 @@ void SpellSearchCmd(PlayerClient* you, char* szLine) {
 	}
 }
 
-void ClearSpellSearch(pSpellSearch pSpellSearch) {
+void ClearSpellSearch(SpellSearch* pSpellSearch) {
 	if (!pSpellSearch)
 		return;
 
@@ -149,7 +149,7 @@ void ClearSpellSearch(pSpellSearch pSpellSearch) {
 	pSpellSearch->CanScribe = true;
 }
 
-char* ParseSpellSearchArgs(char* szArg, char* szRest, pSpellSearch pSpellSearch) {
+char* ParseSpellSearchArgs(char* szArg, char* szRest, SpellSearch* pSpellSearch) {
 	if (szArg && pSpellSearch) {
 		if (!_stricmp(szArg, "Cat") || (!_stricmp(szArg, "Category"))) {
 			GetArg(szArg, szRest, 1);
@@ -200,7 +200,7 @@ char* ParseSpellSearchArgs(char* szArg, char* szRest, pSpellSearch pSpellSearch)
 }
 
 bool bDebugMatch = false;
-bool SpellMatchesSearch(pSpellSearch pSpellSearch, const PSPAWNINFO pChar, const PSPELL pSpell) {
+bool SpellMatchesSearch(SpellSearch* pSpellSearch, const PSPAWNINFO pChar, const PSPELL pSpell) {
 	//Cat / Category
 	if (pSpellSearch->Category != -1) {
 		if (pSpell->Category != pSpellSearch->Category)
@@ -282,7 +282,7 @@ bool SpellMatchesSearch(pSpellSearch pSpellSearch, const PSPAWNINFO pChar, const
 	return true;
 }
 
-void ParseSpellSearch(const char* Buffer, pSpellSearch pSpellSearch) {
+void ParseSpellSearch(const char* Buffer, SpellSearch* pSpellSearch) {
 	char szArg[MAX_STRING] = { 0 };
 	char szMsg[MAX_STRING] = { 0 };
 	char szLLine[MAX_STRING] = { 0 };
