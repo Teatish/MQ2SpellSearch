@@ -44,7 +44,7 @@ struct SpellSearch
 */
 void SpellSearchCmd(PlayerClient* pChar, char* szLine);
 void FindSpells(SpellSearch* pSpellSearch, std::vector<PSPELL>* pvMatchList, bool isCMD);
-void OutputResultsConsole(SpellSearch* pSpellSearch, std::vector<PSPELL>* pvMatchList);
+void OutputResultsConsole(SpellSearch* pSpellSearch, std::vector<PSPELL>& pvMatchList);
 void ClearSpellSearch(SpellSearch* pSpellSearch);
 void ParseSpellSearch(const char* Buffer, SpellSearch* pSpellSearch);
 char* ParseSpellSearchArgs(char* szArg, char* szRest, SpellSearch* pSpellSearch);
@@ -230,7 +230,7 @@ void SpellSearchCmd(PlayerClient* pChar, char* szLine) {
 
 	if (!vMatchList.empty())
 	{
-		OutputResultsConsole(&SearchSpells, &vMatchList);
+		OutputResultsConsole(&SearchSpells, vMatchList);
 		WriteChatf("\aw[MQ2SpellSearch] \aoFound %i spells.", vMatchList.size());
 	}
 	else
@@ -360,6 +360,9 @@ void FindSpells(SpellSearch* pSearchSpells, std::vector<PSPELL>* pvMatchList, bo
 
 		if (thisSpell->ID == 0) continue;
 
+		int ClassLevel = thisSpell->ClassLevel[GetPcProfile()->Class];
+		if (ClassLevel > 253) continue;
+
 		if (string_equals(thisSpell->Name, "NPCSpellPlaceholder")) continue;
 		if (string_equals(thisSpell->Name, "AVCReserved")) continue;
 		if (string_equals(thisSpell->Name, "AVC Reserved")) continue;
@@ -392,7 +395,6 @@ void FindSpells(SpellSearch* pSearchSpells, std::vector<PSPELL>* pvMatchList, bo
 			iSrchLevel = 1;
 			NumParams++;
 			int MaxLevelValue = 0;
-			int ClassLevel = thisSpell->ClassLevel[GetPcProfile()->Class];
 
 			if (pSearchSpells->ShowTopTwoLevels)
 			{
@@ -460,17 +462,12 @@ void FindSpells(SpellSearch* pSearchSpells, std::vector<PSPELL>* pvMatchList, bo
 	}
 }
 
-void OutputResultsConsole (SpellSearch* pSearchSpells, std::vector<PSPELL>* pvMatchList)
+void OutputResultsConsole (SpellSearch* pSearchSpells, std::vector<PSPELL>& pvMatchList)
 {
 	WriteChatf("\n");
 
-	PSPELL thisSpell = nullptr;
-
-	int listsize = pvMatchList->size();
-
-	for (int x = 0; x <= listsize; ++x)
+	for (PSPELL thisSpell : pvMatchList)
 	{
-		thisSpell = pvMatchList->at(x);
 		if (!pSearchSpells->ShowDetailedOutput)
 		{
 			WriteChatf("%s", fmt::format("\aw[MQ2SpellSearch]: \ag{} \ao[Level: {}]", thisSpell->Name, thisSpell->ClassLevel[GetPcProfile()->Class]));
