@@ -26,101 +26,160 @@ struct SpellSearch
 	private:
 
 		// Default values of filter settings.
+		const bool defCanScribe				= false;
+		const bool defShowSpellEffects		= false;
+
+		// Only spells the char can use are shown unless true.
+		const bool defShowAll				= false;
+		const bool defShowMissingSpellsOnly = false;
+		const bool defShowReverse			= false;
+
+		const bool defShowDetailedOutput	= false;
+		const int  defVectorRecord			= 0;
+
+		// Not sure of the intention.  I'm assuming that the rank
+		// need not be shown. "spell", "spell rk. II", "spell rk. III"
+		// should just show "spell", screening duplicates.
 		const bool defIgnoreRank = false;
-		const bool defShowMaxRank = false;
-		const bool defCanScribe = false;
-		const bool defShowSpellEffects = false;
-		const bool defShowAllSpells = false;
-		const bool defShowTopTwoLevels = false;
-		const bool defShowDetailedOutput = false;
-		const bool defShowLast = true;
 
 	public:
 
-	// User supplied args
-	std::string RawQuery = "";
-	std::string CompressedQuery = "";
+		// User supplied args
+		std::string RawQuery		= "";
 
-	// Spell Data
-	int ID = -1;
-	std::string Name = "";
-	std::string PartialName = "";
-	std::string Class = "";
-	int MinLevel = -1;
-	int MaxLevel = -1;
-	std::string Category = "";
-	int nCategory = -1;
-	std::string SubCategory = "";
-	int nSubCategory = -1;
-	int Timer = -1;
+		// Spell Data
+		int         ID				= -1;
+		std::string Name			= "";
+		std::string PartialName		= "";
+		std::string Class			= "";
+		int         MinLevel		= 1;
+		int         MaxLevel		= 1;
+		std::string Category		= "";
+		int         nCategory		= -1;
+		std::string SubCategory		= "";
+		int         nSubCategory	= -1;
+		int         Timer			= -1;
+		bool		IgnoreRank		= defIgnoreRank;
 
-	// SPA will turn into a vector struct - not fully implemented.
-	// This will allow multiple spell effects to be part of the query.
-	int SPA = -1;
+		// SPA will turn into a vector struct - not fully implemented.
+		// This will allow multiple spell effects to be part of the query.
+		int SPA = -1;
 
-	// Configuration settings - filters
-	bool IgnoreRank = defIgnoreRank;
-	bool ShowMaxRank = defShowMaxRank;
-	bool CanScribe = defCanScribe;
-	bool ShowSpellEffects = defShowSpellEffects;
-	bool ShowAllSpells = defShowAllSpells;
-	bool ShowTopTwoLevels = defShowTopTwoLevels;
-	bool ShowDetailedOutput = defShowDetailedOutput;
-	bool ShowLast = defShowLast;
+		// Configuration settings - filters
+		bool CanScribe				= defCanScribe;
+		bool ShowSpellEffects		= defShowSpellEffects;
+		bool ShowAll				= defShowAll;
+		bool ShowMissingSpellsOnly	= defShowMissingSpellsOnly;
+		bool ShowReverse			= defShowReverse;
+		bool ShowDetailedOutput		= defShowDetailedOutput;
+		int  VectorRecord			= defVectorRecord;
 
-	// Allow comparison of SpellSearch objects. Data only.
-	bool SpellSearch::operator==(const SpellSearch& pOther) const
-	{
-		return
-			ID == pOther.ID &&
-			Name == pOther.Name &&
-			PartialName == pOther.PartialName &&
-			Class == pOther.Class &&
-			MinLevel == pOther.MinLevel &&
-			MaxLevel == pOther.MaxLevel &&
-			Category == pOther.Category &&
-			SubCategory == pOther.SubCategory &&
-			Timer == pOther.Timer;
-	}
+		// Allow comparison of SpellSearch objects. Data only.
+		bool SpellSearch::operator==(const SpellSearch& pOther) const
+		{
+			if (
+				ID			== pOther.ID &&
+				Name		== pOther.Name &&
+				PartialName == pOther.PartialName &&
+				Class		== pOther.Class &&
+				MinLevel	== pOther.MinLevel &&
+				MaxLevel	== pOther.MaxLevel &&
+				Category	== pOther.Category &&
+				SubCategory == pOther.SubCategory &&
+				Timer		== pOther.Timer &&
+				IgnoreRank	== pOther.IgnoreRank
+				)
+				return true;
+			return false;
+		}
 
-	void Clear()
-	{
-		RawQuery = "";
-		CompressedQuery = "";
+		// Allow comparison of SpellSearch objects. Data only.
+		bool SpellSearch::operator!=(const SpellSearch& pOther) const
+		{
+			if (
+				ID			!= pOther.ID ||
+				Name		!= pOther.Name ||
+				PartialName != pOther.PartialName ||
+				Class		!= pOther.Class ||
+				MinLevel	!= pOther.MinLevel ||
+				MaxLevel	!= pOther.MaxLevel ||
+				Category	!= pOther.Category ||
+				SubCategory != pOther.SubCategory ||
+				Timer		!= pOther.Timer ||
+				IgnoreRank  != pOther.IgnoreRank
+				)
+				return true;
+			return false;
+		}
 
-		ID = -1;
-		Name = "";
-		PartialName = "";
-		Class = "";
-		MinLevel = -1;
-		MaxLevel = -1;
-		Category = "";
-		nCategory = -1;
-		SubCategory = "";
-		nSubCategory = -1;
-		Timer = -1;
-		// PH this will be converted into a struct
-		SPA = -1;
+		void CacheData(const SpellSearch& pOther)
+		{
+			// User supplied args
+			RawQuery		= pOther.RawQuery;
 
-		IgnoreRank = defIgnoreRank;
-		ShowMaxRank = defShowMaxRank;
-		CanScribe = defCanScribe;
-		ShowSpellEffects = defShowSpellEffects;
-		ShowAllSpells = defShowAllSpells;
-		ShowTopTwoLevels = defShowTopTwoLevels;
-		ShowDetailedOutput = defShowDetailedOutput;
-		ShowLast = defShowLast;
-	}
+			// Data
+			ID				= pOther.ID;
+			Name			= pOther.Name;
+			PartialName		= pOther.PartialName;
+			Class			= pOther.Class;
+			MinLevel		= pOther.MinLevel;
+			MaxLevel		= pOther.MaxLevel;
+			Category		= pOther.Category;
+			SubCategory		= pOther.SubCategory;
+			Timer			= pOther.Timer;
+			IgnoreRank		= pOther.IgnoreRank;
+		}
+
+		void CacheView(const SpellSearch& pOther)
+		{
+			// View
+			CanScribe				= pOther.CanScribe;
+			ShowSpellEffects		= pOther.ShowSpellEffects;
+			ShowAll					= pOther.ShowAll;
+			ShowMissingSpellsOnly	= pOther.ShowMissingSpellsOnly;
+			ShowReverse				= pOther.ShowReverse;
+			ShowDetailedOutput		= pOther.ShowDetailedOutput;
+			VectorRecord			= pOther.VectorRecord;
+		}
+
+		void Clear()
+		{
+			RawQuery		= "";
+
+			ID				= -1;
+			Name			= "";
+			PartialName		= "";
+			Class			= "";
+			MinLevel		= 1;
+			MaxLevel		= 1;
+			Category		= "";
+			nCategory		= -1;
+			SubCategory		= "";
+			nSubCategory	= -1;
+			Timer			= -1;
+			IgnoreRank		= defIgnoreRank;
+
+			// PH this will be converted into a struct
+			SPA = -1;
+
+			CanScribe				= defCanScribe;
+			ShowSpellEffects		= defShowSpellEffects;
+			ShowAll					= defShowAll;
+			ShowMissingSpellsOnly	= defShowMissingSpellsOnly;
+			ShowReverse				= defShowReverse;
+			ShowDetailedOutput		= defShowDetailedOutput;
+			VectorRecord			= defVectorRecord;
+		}
 };
 
 /*
 	CMD Methods and search
 */
 void SpellSearchCmd(PlayerClient* pChar, char* szLine);
-int FindSpells(SpellSearch& psSpellSearch, std::vector<PSPELL>& pvMatchList, bool isCMD);
+std::vector<PSPELL> FindSpells(SpellSearch& psSpellSearch, bool isCMD);
 void OutputResultsCMD(SpellSearch& psSpellSearch, std::vector<PSPELL>& pvMatchList);
 void OutputResultConsole(SpellSearch& psSearchSpells, PSPELL& pthisSpell);
-void ParseSpellSearch(const char* Buffer, SpellSearch& psSpellSearch);
+SpellSearch ParseSpellSearch(const char* Buffer);
 char* ParseSpellSearchArgs(char* szArg, char* szRest, SpellSearch& psSpellSearch);
 void ShowCMDHelp();
 
@@ -135,49 +194,51 @@ char* ParseSpellSearchArgs(char* szArg, char* szRest, SpellSearch& psSpellSearch
 			szRest = GetNextArg(szRest, 1);
 		}
 
-		if (!_stricmp(szArg, "Name") || !_stricmp(szArg, "-n") || !_stricmp(szArg, "-name"))
+		if (!_stricmp(szArg, "Name") || !_stricmp(szArg, "-name") !_stricmp(szArg, "-n"))
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.Name = szArg;
 			szRest = GetNextArg(szRest, 1);
 		}
 
-		if (!_stricmp(szArg, "PartialName") || !_stricmp(szArg, "-pn") || !_stricmp(szArg, "-partialname"))
+		if (!_stricmp(szArg, "PartialName") || !_stricmp(szArg, "-partialname") || !_stricmp(szArg, "pname") || !_stricmp(szArg, "-pname") || !_stricmp(szArg, "-pn"))
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.PartialName = szArg;
 			szRest = GetNextArg(szRest, 1);
 		}
 
-		if (!_stricmp(szArg, "Cat") || !_stricmp(szArg, "Category") || !_stricmp(szArg, "-c") || !_stricmp(szArg, "-cat"))
+		if (!_stricmp(szArg, "Category") || !_stricmp(szArg, "-category") || !_stricmp(szArg, "Cat") || !_stricmp(szArg, "-cat"))
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.Category = szArg;
 			szRest = GetNextArg(szRest, 1);
 		}
 
-		if (!_stricmp(szArg, "SubCat") || !_stricmp(szArg, "SubCategory") || !_stricmp(szArg, "-sc") || !_stricmp(szArg, "-subcat"))
+		if (!_stricmp(szArg, "SubCategory") || !_stricmp(szArg, "-subcategory") || !_stricmp(szArg, "SubCat") || !_stricmp(szArg, "-subcat"))
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.SubCategory = szArg;
 			szRest = GetNextArg(szRest, 1);
 		}
 
-		if (!_stricmp(szArg, "MinLevel") || !_stricmp(szArg, "-minl"))
+		if (!_stricmp(szArg, "MinLevel") || !_stricmp(szArg, "-minlevel") || !_stricmp(szArg, "-minl"))
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.MinLevel = atoi(szArg);
+			if (psSpellSearch.MinLevel < 1) psSpellSearch.MinLevel = 1;
 			szRest = GetNextArg(szRest, 1);
 		}
 
-		if (!_stricmp(szArg, "MaxLevel") || !_stricmp(szArg, "-maxl"))
+		if (!_stricmp(szArg, "MaxLevel") || !_stricmp(szArg, "-maxlevel") || !_stricmp(szArg, "-maxl"))
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.MaxLevel = atoi(szArg);
+			if (psSpellSearch.MaxLevel < psSpellSearch.MinLevel) psSpellSearch.MaxLevel = psSpellSearch.MinLevel;
 			szRest = GetNextArg(szRest, 1);
 		}
 
-		if (!_stricmp(szArg, "Timer") || !_stricmp(szArg, "-t"))
+		if (!_stricmp(szArg, "Timer") || !_stricmp(szArg, "-timer"))
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.Timer = atoi(szArg);
@@ -193,15 +254,9 @@ char* ParseSpellSearchArgs(char* szArg, char* szRest, SpellSearch& psSpellSearch
 		}
 
 		// Flag
-		if (!_stricmp(szArg, "IgnoreRank") || !_stricmp(szArg, "-ignorerank") || !_stricmp(szArg, "-ir"))
+		if (!_stricmp(szArg, "IgnoreRank") || !_stricmp(szArg, "-ignorerank"))
 		{
 			psSpellSearch.IgnoreRank = true;
-		}
-
-		// Flag
-		if (!_stricmp(szArg, "ShowMaxRank") || !_stricmp(szArg, "-showmaxrank") || !_stricmp(szArg, "-smr"))
-		{
-			psSpellSearch.ShowMaxRank = true;
 		}
 
 		// Flag
@@ -217,44 +272,63 @@ char* ParseSpellSearchArgs(char* szArg, char* szRest, SpellSearch& psSpellSearch
 		}
 
 		// Flag
-		if (!_stricmp(szArg, "ShowTopTwoLevels") || !_stricmp(szArg, "-showtoptwo") || !_stricmp(szArg, "-stt"))
-		{
-			psSpellSearch.ShowTopTwoLevels = true;
-		}
-
-		// Flag
 		if (!_stricmp(szArg, "ShowDetailedOutput") || !_stricmp(szArg, "-showdetailedoutput") || !_stricmp(szArg, "-sdo"))
 		{
 			psSpellSearch.ShowDetailedOutput = true;
 		}
 
-		// Flag
-		if (!_stricmp(szArg, "ShowAllSpells") || !_stricmp(szArg, "-showallspells") || !_stricmp(szArg, "-sas"))
+		// Flag: Show all the spells found regardless of level or whether I can use it or have it memorized
+		if (!_stricmp(szArg, "ShowAll") || !_stricmp(szArg, "-showall") || !_stricmp(szArg, "-all"))
 		{
-			psSpellSearch.ShowAllSpells = true;
+			psSpellSearch.ShowAll = true;
 		}
 
-		// Flag
-		if (!_stricmp(szArg, "Last") || !_stricmp(szArg, "-last") || !_stricmp(szArg, "-l"))
+		// Flag: Reverse output order
+		if (!_stricmp(szArg, "Reverse") || !_stricmp(szArg, "-reverse") || !_stricmp(szArg, "-rev"))
 		{
-			psSpellSearch.ShowLast = true;
+			psSpellSearch.ShowReverse = true;
+		}
+
+		// View - if it finds a number then it assumes thats the spell you want in the list
+		if (!_stricmp(szArg, "Spell") || !_stricmp(szArg, "-spell") ||
+			!_stricmp(szArg, "-sp") || !_stricmp(szArg, "Number") ||
+			!_stricmp(szArg, "-number") || !_stricmp(szArg, "-num"))
+		{
+			GetArg(szArg, szRest, 1);
+			if (!_stricmp(szArg, "last"))
+			{
+				psSpellSearch.VectorRecord = 65535;
+			}
+			else if (!_stricmp(szArg, "first"))
+			{
+				psSpellSearch.VectorRecord = 1;
+			}
+			else
+			{
+				psSpellSearch.VectorRecord = atoi(szArg);
+				if (psSpellSearch.VectorRecord < 1) psSpellSearch.VectorRecord = 1;
+			}
+			szRest = GetNextArg(szRest, 1);
+		}
+
+		// Default behavior is that only spells a character has will be shown
+		if (!_stricmp(szArg, "Missing") || !_stricmp(szArg, "-missing") || !_stricmp(szArg, "-miss"))
+		{
+			psSpellSearch.ShowMissingSpellsOnly = true;
 		}
 	}
 	return szRest;
 }
 
-void ParseSpellSearch(const char* Buffer, SpellSearch& psSpellSearch)
+SpellSearch ParseSpellSearch(const char* Buffer)
 {
+	SpellSearch psSpellSearch;
+
 	char szArg[MAX_STRING] = { 0 };
 	char szMsg[MAX_STRING] = { 0 };
 	char szLLine[MAX_STRING] = { 0 };
 	char* szFilter = szLLine;
 	bool bArg = true;
-
-	// Used to store the search parameters so we can compare subsequent
-	// requests to see if we already have the results, and just provide
-	// different output from it. Flags are not stored unless they
-	// affect the data.
 
 	strcpy_s(szLLine, Buffer);
 	_strlwr_s(szLLine);
@@ -273,6 +347,8 @@ void ParseSpellSearch(const char* Buffer, SpellSearch& psSpellSearch)
 			szFilter = ParseSpellSearchArgs(szArg, szFilter, psSpellSearch);
 		}
 	}
+
+	return psSpellSearch;
 }
 
 // Example of finding a spell in the spellbook
@@ -301,43 +377,41 @@ EQ_Spell* GetHighestLearnedSpellByGroupID(int dwSpellGroupID)
 
 void SpellSearchCmd(PlayerClient* pChar, char* szLine)
 {
-	// How fast|slow is this thing?
-	auto start = high_resolution_clock::now();
-
 	if (strlen(szLine) == 0 || !_stricmp(szLine, "help") || !_stricmp(szLine, "-h") || !_stricmp(szLine, "-help"))
 	{
 		ShowCMDHelp();
 		return;
 	}
 
-	SpellSearch SearchSpells;
-	SearchSpells.Clear();
+	SpellSearch SearchSpells = ParseSpellSearch(szLine);
+
 	SearchSpells.RawQuery = szLine;
 
-	ParseSpellSearch(szLine, SearchSpells);
+	// How fast|slow is this thing?
+	auto start = high_resolution_clock::now();
 
-	std::vector<PSPELL> vMatchList;
+	std::vector<PSPELL> vMatchList = FindSpells(SearchSpells, true);
 
-	int SpellCount = FindSpells(SearchSpells, vMatchList, true);
+	auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<milliseconds>(stop - start);
+
+	int SpellCount = vMatchList.size();
 
 	if (SpellCount)
 	{
 		OutputResultsCMD(SearchSpells, vMatchList);
-		WriteChatf("\aw[MQ2SpellSearch] \aoFound %i spells.", SpellCount);
+		WriteChatf("\aw[MQ2SpellSearch] \aoFound %i spells in %lld ms", SpellCount, duration.count());
 	}
 	else
 	{
-		WriteChatf("\aw[MQ2SpellSearch] \aoNo spells found.");
+		WriteChatf("\aw[MQ2SpellSearch] \aoNo spells found (%lld ms)", duration.count());
 	}
-
-	auto stop = high_resolution_clock::now();
-	auto duration = duration_cast<milliseconds>(stop - start);
-	WriteChatf("%s", fmt::format("Query time: {} ms", duration.count()));
 }
 
 // If TLO, then WriteChatf is suppressed.
-int FindSpells(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList, bool isCMD)
+std::vector<PSPELL> FindSpells(SpellSearch& psSearchSpells, bool isCMD)
 {
+	std::vector<PSPELL> pvMatchList;
 	PSPELL thisSpell = nullptr;
 
 	// Look for our exact match criteria: ID and Name
@@ -350,11 +424,11 @@ int FindSpells(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList, bo
 			{
 				WriteChatf("\aw[MQ2SpellSearch] \aySpell ID %i not found.", psSearchSpells.ID);
 			}
-			return 0;
+			return pvMatchList;
 		}
 
 		pvMatchList.push_back(thisSpell);
-		return 1;
+		return pvMatchList;
 	}
 
 	if (!string_equals(psSearchSpells.Name, ""))
@@ -366,10 +440,10 @@ int FindSpells(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList, bo
 			{
 				WriteChatf("\aw[MQ2SpellSearch] \aySpell Name [%s] not found.", psSearchSpells.Name.c_str());
 			}
-			return 0;
+			return pvMatchList;
 		}
 		pvMatchList.push_back(thisSpell);
-		return 1;
+		return pvMatchList;
 	}
 
 	// Look up the category and subcategory ids
@@ -393,7 +467,7 @@ int FindSpells(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList, bo
 			{
 				WriteChatf("\aw[MQ2SpellSearch] \ayCould not find Category %s", psSearchSpells.Category.c_str());
 			}
-			return 0;
+			return pvMatchList;
 		}
 	}
 
@@ -414,7 +488,7 @@ int FindSpells(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList, bo
 			{
 				WriteChatf("\aw[MQ2SpellSearch] \ayCould not find SubCategory %s", psSearchSpells.SubCategory.c_str());
 			}
-			return 0;
+			return pvMatchList;
 		}
 	}
 
@@ -452,7 +526,7 @@ int FindSpells(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList, bo
 			{
 				WriteChatf("\aw[MQ2SpellSearch] \arProblem initializing search. Try reloading plugin, mq, or restart Windows.");
 			}
-			return 0;
+			return pvMatchList;
 		}
 
 		if (thisSpell->ID == 0) continue;
@@ -487,47 +561,25 @@ int FindSpells(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList, bo
 
 		//if (thisSpell->ClassLevel[GetPcProfile()->Class] > GetPcProfile()->Level) continue;
 
-		if (psSearchSpells.ShowTopTwoLevels || psSearchSpells.MinLevel > 0 || psSearchSpells.MaxLevel > 0)
+		if (psSearchSpells.MinLevel > 1 || psSearchSpells.MaxLevel > 1)
 		{
 			iSrchLevel = 1;
 			NumParams++;
-			int MaxLevelValue = 0;
+			int MinLevelValue = 1;
+			int MaxLevelValue = 1;
 
-			if (psSearchSpells.ShowTopTwoLevels)
+			if (psSearchSpells.ShowAll)
 			{
-				if (psSearchSpells.ShowAllSpells)
-				{
-					int MaxLevelValue = 255;
-				}
-				else
-				{
-					MaxLevelValue = psSearchSpells.MaxLevel > 0 ? psSearchSpells.MaxLevel : GetPcProfile()->Level;
-				}
-
-				if (ClassLevel >= psSearchSpells.MinLevel && ClassLevel <= MaxLevelValue) {
-					NextHighestLevelSpellID = MaxLevelSpellID;
-					NextHighestLevel = MaxLevel;
-					MaxLevelSpellID = thisSpell->ID;
-					MaxLevel = thisSpell->ClassLevel[GetPcProfile()->Class];
-				}
-				else
-				{
-					continue;
-				}
+				int MinLevelValue = 1;
+				int MaxLevelValue = 255;
 			}
 			else
 			{
-				if (psSearchSpells.ShowAllSpells)
-				{
-					int MaxLevelValue = 255;
-				}
-				else
-				{
-					MaxLevelValue = psSearchSpells.MaxLevel > 0 ? psSearchSpells.MaxLevel : GetPcProfile()->Level;
-				}
-
-				if (!(ClassLevel >= psSearchSpells.MinLevel && ClassLevel <= MaxLevelValue)) continue;
+				MinLevelValue = psSearchSpells.MinLevel > 1 ? psSearchSpells.MinLevel : 1;
+				MaxLevelValue = psSearchSpells.MaxLevel > 1 ? psSearchSpells.MaxLevel : GetPcProfile()->Level;
 			}
+
+			if (ClassLevel < MinLevelValue || ClassLevel > MaxLevelValue) continue;
 		}
 
 		// Should this require at least one of the spell categories? It's going to be slow.
@@ -545,36 +597,42 @@ int FindSpells(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList, bo
 		// 
 
 		// We searched all the parameters we specified. If we are here, we found something.
-		if (!psSearchSpells.ShowTopTwoLevels && (NumParams == (iSrchPartialName + iSrchCat + iSrchSubCat + iSrchLevel)))
+		if (NumParams == (iSrchPartialName + iSrchCat + iSrchSubCat + iSrchLevel))
 		{
 			pvMatchList.push_back(thisSpell);
 		}
 	}
 
-	// We look at this after the loop so we can return the two best between the levels.
-	if (psSearchSpells.ShowTopTwoLevels && (NumParams == (iSrchPartialName + iSrchCat + iSrchSubCat + iSrchLevel)))
-	{
-		if (MaxLevelSpellID) pvMatchList.push_back(pSpellMgr->GetSpellByID(MaxLevelSpellID));
-		if (NextHighestLevelSpellID) pvMatchList.push_back(pSpellMgr->GetSpellByID(NextHighestLevelSpellID));
-	}
-
-	return pvMatchList.size();
+	return pvMatchList;
 }
 
 void OutputResultsCMD(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList)
 {
-	int szvMatchList = pvMatchList.size() - 1;
-
 	PSPELL thisSpell;
 
-	if (psSearchSpells.ShowLast)
+	// Handle VectorRecord
+	int szvMatchList = pvMatchList.size();
+	
+	// "last" condition
+	if (psSearchSpells.VectorRecord > szvMatchList) psSearchSpells.VectorRecord = szvMatchList;
+
+	// Look if a specific record is requested. This also innately handles "first" and "last" at this point.
+	if (psSearchSpells.VectorRecord > 0)
+	{
+		thisSpell = pvMatchList.at(psSearchSpells.VectorRecord - 1);
+		if (thisSpell != nullptr) OutputResultConsole(psSearchSpells, thisSpell);
+		
+		return;
+	}
+
+	// Handle output order in list form
+	szvMatchList = pvMatchList.size() - 1;
+	if (psSearchSpells.ShowReverse)
 	{
 		for (int x = szvMatchList; x >= 0; --x)
 		{
 			thisSpell = pvMatchList.at(x);
 			if (thisSpell == nullptr) continue;
-
-			//WriteChatf("%s", thisSpell->Name);
 
 			OutputResultConsole(psSearchSpells, thisSpell);
 		}
@@ -586,8 +644,6 @@ void OutputResultsCMD(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchL
 			thisSpell = pvMatchList.at(x);
 			if (thisSpell == nullptr) continue;
 
-			//WriteChatf("%s", thisSpell->Name);
-
 			OutputResultConsole(psSearchSpells, thisSpell);
 		}
 
@@ -598,11 +654,11 @@ void OutputResultConsole(SpellSearch& psSearchSpells, PSPELL& pthisSpell)
 {
 	if (!psSearchSpells.ShowDetailedOutput)
 	{
-		WriteChatf("\aw[MQ2SpellSearch]: \ag%s \ao[Level: %d]", pthisSpell->Name, pthisSpell->ClassLevel[GetPcProfile()->Class]);
+		WriteChatf("\aw[ID: %*d] \ao[Level: %*d] \ag%s", 5, pthisSpell->ID, 3, pthisSpell->ClassLevel[GetPcProfile()->Class], pthisSpell->Name);
 	}
 	else
 	{
-		WriteChatf("\aw[MQ2SpellSearch]: \aoID: %d [%s] Lvl: %d Cat: %d SubCat: %d", pthisSpell->ID, pthisSpell->Name, pthisSpell->ClassLevel[GetPcProfile()->Class], pthisSpell->Category, pthisSpell->Subcategory);
+		WriteChatf("\aoID: %d [%s] Lvl: %d Cat: %d SubCat: %d", pthisSpell->ID, pthisSpell->Name, pthisSpell->ClassLevel[GetPcProfile()->Class], pthisSpell->Category, pthisSpell->Subcategory);
 	}
 
 	if (psSearchSpells.ShowSpellEffects || psSearchSpells.ShowDetailedOutput)
@@ -614,7 +670,7 @@ void OutputResultConsole(SpellSearch& psSearchSpells, PSPELL& pthisSpell)
 		{
 			szBuff[0] = szTemp[0] = 0;
 			strcat_s(szBuff, ParseSpellEffect(pthisSpell, i, szTemp, sizeof(szTemp)));
-			if (szBuff[0] != 0) WriteChatf("    - %s", szBuff);
+			if (szBuff[0] != 0) WriteChatf("  - %s", szBuff);
 		}
 
 		WriteChatf("\n");
@@ -641,6 +697,7 @@ class MQ2SpellSearchType : public MQ2Type
 		MQ2SpellSearchType();
 
 		void MQ2SpellSearchType::GetSpellSearchState(std::string_view query);
+		int MQ2SpellSearchType::GetVectorRecordID(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList);
 		bool GetMember(MQVarPtr VarPtr, const char* Member, char* Index, MQTypeVar& Dest) override;
 		static bool dataSpellSearch(const char* szIndex, MQTypeVar& Ret);
 };
@@ -648,26 +705,27 @@ MQ2SpellSearchType* pSpellSearchType = nullptr;
 
 struct SPELLSEARCHELEMENT
 {
-	int id;
-	std::string name;
-	int level;
-	int pcclass;
-	int pcsubclass;
-	int category;
-	int subcategory;
-	int groupid;
-	int subgroupid;
-	int recordID;
+	public:
+		int id;
+		std::string name;
+		int level;
+		int pcclass;
+		int pcsubclass;
+		int category;
+		int subcategory;
+		int groupid;
+		int subgroupid;
+		int recordID;
 
-	std::string rawquery;
-	std::string trimmedquery;
-	std::string query;
-	std::string previousquery;
+		std::string rawquery;
+		std::string trimmedquery;
+		std::string query;
+		std::string previousquery;
 
-	SpellSearch SearchSpells;
-	int spellsfound;
+		SpellSearch SearchSpells;
 
-	std::vector<PSPELL> vMatchesList;
+		std::vector<PSPELL> vMatchesList;
+		int spellsfound;
 };
 SPELLSEARCHELEMENT* pSpellSearch = new SPELLSEARCHELEMENT;
 
@@ -684,9 +742,10 @@ enum class SpellSearchMembers
 	SubGroup,
 	Count,
 	RecordID,
+	Query,
 };
 
-MQ2SpellSearchType::MQ2SpellSearchType() : MQ2Type("spellsearch")
+MQ2SpellSearchType::MQ2SpellSearchType() : MQ2Type("SpellSearch")
 {
 	ScopedTypeMember(SpellSearchMembers, ID);
 	ScopedTypeMember(SpellSearchMembers, Name);
@@ -699,6 +758,22 @@ MQ2SpellSearchType::MQ2SpellSearchType() : MQ2Type("spellsearch")
 	ScopedTypeMember(SpellSearchMembers, SubGroup);
 	ScopedTypeMember(SpellSearchMembers, Count);
 	ScopedTypeMember(SpellSearchMembers, RecordID);
+	ScopedTypeMember(SpellSearchMembers, Query);
+}
+
+int MQ2SpellSearchType::GetVectorRecordID(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList)
+{
+	// Handle VectorRecord
+	int szvMatchList = pvMatchList.size();
+
+	// "last" condition
+	if (psSearchSpells.VectorRecord > szvMatchList) psSearchSpells.VectorRecord = szvMatchList;
+
+	// Look if a specific record is requested. This also innately handles "first" and "last" at this point.
+	if (psSearchSpells.VectorRecord > 0) return psSearchSpells.VectorRecord - 1;
+
+	// Default is the first record
+	return 0;
 }
 
 // Given the query, find spells.
@@ -710,50 +785,41 @@ void MQ2SpellSearchType::GetSpellSearchState(std::string_view query)
 
 	if (!pProfile) return;
 
-	pSpellSearch->SearchSpells.Clear();
-
 	// Make a string think its a char...
-	const char* szQuery;
-	szQuery = &query[0];
+	const char* szQuery = &query[0];
 
-	ParseSpellSearch(szQuery, pSpellSearch->SearchSpells);
+	SpellSearch psSearchSpells = ParseSpellSearch(szQuery);
 
-	//if (SearchSpells.TrimParse != pSpellSearch->trimmedquery)
-	//{
-		pSpellSearch->spellsfound = FindSpells(pSpellSearch->SearchSpells, pSpellSearch->vMatchesList, false);
-		if (!pSpellSearch->spellsfound)
-		{
-			return;
-		}
-		pSpellSearch->query = query;
-	//}
-
-	int recordID = 0;
-
-	if (pSpellSearch->SearchSpells.ShowLast)
+	if (psSearchSpells == pSpellSearch->SearchSpells)
 	{
-		int recordID = pSpellSearch->spellsfound - 1;
-	}
-
-	if (pSpellSearch->spellsfound)
-	{
-		pSpellSearch->previousquery = pSpellSearch->query;
-
-		pSpellSearch->id = pSpellSearch->vMatchesList[recordID]->ID;
-		pSpellSearch->name = pSpellSearch->vMatchesList[recordID]->Name;
-		pSpellSearch->level = pSpellSearch->vMatchesList[recordID]->ClassLevel[pProfile->Level];
-		pSpellSearch->pcclass = pSpellSearch->vMatchesList[recordID]->SpellClass;
-		pSpellSearch->pcsubclass = pSpellSearch->vMatchesList[recordID]->SpellSubClass;
-		pSpellSearch->category = pSpellSearch->vMatchesList[recordID]->Category;
-		pSpellSearch->subcategory = pSpellSearch->vMatchesList[recordID]->Subcategory;
-		pSpellSearch->groupid = pSpellSearch->vMatchesList[recordID]->SpellGroup;
-		pSpellSearch->subgroupid = pSpellSearch->vMatchesList[recordID]->SpellSubGroup;
-		pSpellSearch->recordID = recordID;
+		pSpellSearch->SearchSpells.CacheView(psSearchSpells);
 	}
 	else
 	{
-		pSpellSearch->SearchSpells.Clear();
+		pSpellSearch->SearchSpells.CacheData(psSearchSpells);
+		pSpellSearch->SearchSpells.CacheView(psSearchSpells);
+		std::vector<PSPELL>& lvMatchesList = FindSpells(pSpellSearch->SearchSpells, false);
+		pSpellSearch->vMatchesList = lvMatchesList;
+		pSpellSearch->spellsfound = lvMatchesList.size();
 	}
+
+	if (pSpellSearch->spellsfound < 1) return;
+
+	pSpellSearch->previousquery = pSpellSearch->query;
+	pSpellSearch->query = query;
+
+	int recordID = MQ2SpellSearchType::GetVectorRecordID(pSpellSearch->SearchSpells, pSpellSearch->vMatchesList);
+
+	pSpellSearch->id = pSpellSearch->vMatchesList[recordID]->ID;
+	pSpellSearch->name = pSpellSearch->vMatchesList[recordID]->Name;
+	pSpellSearch->level = pSpellSearch->vMatchesList[recordID]->ClassLevel[pProfile->Level];
+	pSpellSearch->pcclass = pSpellSearch->vMatchesList[recordID]->SpellClass;
+	pSpellSearch->pcsubclass = pSpellSearch->vMatchesList[recordID]->SpellSubClass;
+	pSpellSearch->category = pSpellSearch->vMatchesList[recordID]->Category;
+	pSpellSearch->subcategory = pSpellSearch->vMatchesList[recordID]->Subcategory;
+	pSpellSearch->groupid = pSpellSearch->vMatchesList[recordID]->SpellGroup;
+	pSpellSearch->subgroupid = pSpellSearch->vMatchesList[recordID]->SpellSubGroup;
+	pSpellSearch->recordID = recordID;
 
 	return;
 }
@@ -835,6 +901,13 @@ bool MQ2SpellSearchType::GetMember(MQVarPtr VarPtr, const char* Member, char* In
 			Dest.Type = pIntType;
 			return true;
 
+		case SpellSearchMembers::Query:
+			GetSpellSearchState(pSpellSearch->query);
+			strcpy_s(DataTypeTemp, pSpellSearch->query.c_str());
+			Dest.Ptr = &DataTypeTemp[0];
+			Dest.Type = pIntType;
+			return true;
+
 		default:
 
 			break;
@@ -844,9 +917,6 @@ bool MQ2SpellSearchType::GetMember(MQVarPtr VarPtr, const char* Member, char* In
 
 bool MQ2SpellSearchType::dataSpellSearch(const char* szIndex, MQTypeVar& Ret)
 {
-	// How fast|slow is this thing?
-	auto start = high_resolution_clock::now();
-
 	pSpellSearch->query = szIndex;
 
 	if (pSpellSearch->query.empty())
@@ -862,10 +932,6 @@ bool MQ2SpellSearchType::dataSpellSearch(const char* szIndex, MQTypeVar& Ret)
 
 	Ret.DWord = 0;
 	Ret.Type = pSpellSearchType;
-
-	auto stop = high_resolution_clock::now();
-	auto duration = duration_cast<milliseconds>(stop - start);
-	WriteChatf("%s", fmt::format("Query time: {} ms", duration.count()));
 
 	return true;
 }
