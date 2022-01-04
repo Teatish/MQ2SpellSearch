@@ -74,6 +74,9 @@ struct SpellSearch
 		bool ShowDetailedOutput		= defShowDetailedOutput;
 		int  VectorRecord			= defVectorRecord;
 
+		// How many were shown to the user.
+		int SpellsShown = 0;
+
 		// Allow comparison of SpellSearch objects. Data only.
 		bool SpellSearch::operator==(const SpellSearch& pOther) const
 		{
@@ -169,6 +172,9 @@ struct SpellSearch
 			ShowReverse				= defShowReverse;
 			ShowDetailedOutput		= defShowDetailedOutput;
 			VectorRecord			= defVectorRecord;
+
+			// How many were shown to the user.
+			SpellsShown = 0;
 		}
 };
 
@@ -177,8 +183,10 @@ struct SpellSearch
 */
 void SpellSearchCmd(PlayerClient* pChar, char* szLine);
 std::vector<PSPELL> FindSpells(SpellSearch& psSpellSearch, bool isCMD);
+bool KnowSpell(int SpellID);
 void OutputResultsCMD(SpellSearch& psSpellSearch, std::vector<PSPELL>& pvMatchList);
 void OutputResultConsole(SpellSearch& psSearchSpells, PSPELL& pthisSpell);
+void DumpPSpellMembers(PSPELL& pSpell);
 SpellSearch ParseSpellSearch(const char* Buffer);
 char* ParseSpellSearchArgs(char* szArg, char* szRest, SpellSearch& psSpellSearch);
 void ShowCMDHelp();
@@ -194,7 +202,7 @@ char* ParseSpellSearchArgs(char* szArg, char* szRest, SpellSearch& psSpellSearch
 			szRest = GetNextArg(szRest, 1);
 		}
 
-		if (!_stricmp(szArg, "Name") || !_stricmp(szArg, "-name") !_stricmp(szArg, "-n"))
+		if (!_stricmp(szArg, "Name") || !_stricmp(szArg, "-name") || !_stricmp(szArg, "-n"))
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.Name = szArg;
@@ -292,7 +300,9 @@ char* ParseSpellSearchArgs(char* szArg, char* szRest, SpellSearch& psSpellSearch
 		// View - if it finds a number then it assumes thats the spell you want in the list
 		if (!_stricmp(szArg, "Spell") || !_stricmp(szArg, "-spell") ||
 			!_stricmp(szArg, "-sp") || !_stricmp(szArg, "Number") ||
-			!_stricmp(szArg, "-number") || !_stricmp(szArg, "-num"))
+			!_stricmp(szArg, "-number") || !_stricmp(szArg, "-num") ||
+			!_stricmp(szArg, "Show") || !_stricmp(szArg, "-show")
+			)
 		{
 			GetArg(szArg, szRest, 1);
 			if (!_stricmp(szArg, "last"))
@@ -302,6 +312,10 @@ char* ParseSpellSearchArgs(char* szArg, char* szRest, SpellSearch& psSpellSearch
 			else if (!_stricmp(szArg, "first"))
 			{
 				psSpellSearch.VectorRecord = 1;
+			}
+			else if (!_stricmp(szArg, "missing"))
+			{
+				psSpellSearch.ShowMissingSpellsOnly = true;
 			}
 			else
 			{
@@ -351,30 +365,6 @@ SpellSearch ParseSpellSearch(const char* Buffer)
 	return psSpellSearch;
 }
 
-// Example of finding a spell in the spellbook
-/*
-EQ_Spell* GetHighestLearnedSpellByGroupID(int dwSpellGroupID)
-{
-	PcProfile* pProfile = GetPcProfile();
-	if (!pProfile) return nullptr;
-
-	EQ_Spell* result = nullptr;
-
-	for (int nSpell : pProfile->SpellBook)
-	{
-		auto pFoundSpell = GetSpellByID(nSpell);
-		if (!pFoundSpell || pFoundSpell->SpellGroup != dwSpellGroupID)
-			continue;
-
-		// Find the highest rank of the spell that matches this spell group
-		if (!result || result->SpellRank < pFoundSpell->SpellRank)
-			result = pFoundSpell;
-	}
-
-	return result;
-}
-*/
-
 void SpellSearchCmd(PlayerClient* pChar, char* szLine)
 {
 	if (strlen(szLine) == 0 || !_stricmp(szLine, "help") || !_stricmp(szLine, "-h") || !_stricmp(szLine, "-help"))
@@ -388,23 +378,26 @@ void SpellSearchCmd(PlayerClient* pChar, char* szLine)
 	SearchSpells.RawQuery = szLine;
 
 	// How fast|slow is this thing?
-	auto start = high_resolution_clock::now();
+	//auto start = high_resolution_clock::now();
 
 	std::vector<PSPELL> vMatchList = FindSpells(SearchSpells, true);
 
-	auto stop = high_resolution_clock::now();
-	auto duration = duration_cast<milliseconds>(stop - start);
+	//auto stop = high_resolution_clock::now();
+	//auto duration = duration_cast<milliseconds>(stop - start);
 
 	int SpellCount = vMatchList.size();
 
-	if (SpellCount)
+	if (SpellCount>0) OutputResultsCMD(SearchSpells, vMatchList);
+	
+	if (!SearchSpells.SpellsShown)
 	{
-		OutputResultsCMD(SearchSpells, vMatchList);
-		WriteChatf("\aw[MQ2SpellSearch] \aoFound %i spells in %lld ms", SpellCount, duration.count());
+		WriteChatf("\aw[MQ2SpellSearch] \ayNo matches found");
+		//WriteChatf("\aw[MQ2SpellSearch] \ayNo spells found (%lld ms)", duration.count());
 	}
 	else
 	{
-		WriteChatf("\aw[MQ2SpellSearch] \aoNo spells found (%lld ms)", duration.count());
+		WriteChatf("\aw[MQ2SpellSearch] \aoFound %d matches", SearchSpells.SpellsShown);
+		//WriteChatf("\aw[MQ2SpellSearch] \aoFound %i spells in %lld ms", SpellCount, duration.count());
 	}
 }
 
@@ -606,22 +599,88 @@ std::vector<PSPELL> FindSpells(SpellSearch& psSearchSpells, bool isCMD)
 	return pvMatchList;
 }
 
+
+// Example of finding a spell in the spellbook
+/*
+EQ_Spell* GetHighestLearnedSpellByGroupID(int dwSpellGroupID)
+{
+	PcProfile* pProfile = GetPcProfile();
+	if (!pProfile) return nullptr;
+
+	EQ_Spell* result = nullptr;
+
+	for (int nSpell : pProfile->SpellBook)
+	{
+		auto pFoundSpell = GetSpellByID(nSpell);
+		if (!pFoundSpell || pFoundSpell->SpellGroup != dwSpellGroupID)
+			continue;
+
+		// Find the highest rank of the spell that matches this spell group
+		if (!result || result->SpellRank < pFoundSpell->SpellRank)
+			result = pFoundSpell;
+	}
+
+	return result;
+}
+*/
+
+bool KnowSpell(int SpellID)
+{
+	PcProfile* pProfile = GetPcProfile();
+	if (!pProfile) return false;
+
+	EQ_Spell* result = nullptr;
+
+	for (int nSpell : pProfile->SpellBook)
+	{
+		if (nSpell == SpellID) return true;
+	}
+
+	return false;
+}
+
 void OutputResultsCMD(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList)
 {
 	PSPELL thisSpell;
 
+	psSearchSpells.SpellsShown = 0;
+
 	// Handle VectorRecord
 	int szvMatchList = pvMatchList.size();
-	
-	// "last" condition
-	if (psSearchSpells.VectorRecord > szvMatchList) psSearchSpells.VectorRecord = szvMatchList;
 
-	// Look if a specific record is requested. This also innately handles "first" and "last" at this point.
+	// "last" condition
+	if (psSearchSpells.VectorRecord > szvMatchList)
+	{
+		for (int x = szvMatchList - 1; x >= 0; --x)
+		{
+			thisSpell = pvMatchList.at(x);
+			if (thisSpell == nullptr) continue;
+
+			if (psSearchSpells.ShowAll ||
+				(psSearchSpells.ShowMissingSpellsOnly && !KnowSpell(thisSpell->ID)) ||
+				(!psSearchSpells.ShowMissingSpellsOnly && KnowSpell(thisSpell->ID)))
+			{
+				OutputResultConsole(psSearchSpells, thisSpell);
+				return;
+			}
+		}
+		return;
+	}
+
+	// Look if a specific record is requested.
 	if (psSearchSpells.VectorRecord > 0)
 	{
 		thisSpell = pvMatchList.at(psSearchSpells.VectorRecord - 1);
-		if (thisSpell != nullptr) OutputResultConsole(psSearchSpells, thisSpell);
-		
+		if (thisSpell != nullptr)
+		{
+			if (psSearchSpells.ShowAll ||
+				(psSearchSpells.ShowMissingSpellsOnly && !KnowSpell(thisSpell->ID)) ||
+				(!psSearchSpells.ShowMissingSpellsOnly && KnowSpell(thisSpell->ID)))
+			{
+				OutputResultConsole(psSearchSpells, thisSpell);
+				return;
+			}
+		}
 		return;
 	}
 
@@ -634,8 +693,20 @@ void OutputResultsCMD(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchL
 			thisSpell = pvMatchList.at(x);
 			if (thisSpell == nullptr) continue;
 
-			OutputResultConsole(psSearchSpells, thisSpell);
+			if (psSearchSpells.ShowAll)
+			{
+				OutputResultConsole(psSearchSpells, thisSpell);
+			}
+			else if (psSearchSpells.ShowMissingSpellsOnly && !KnowSpell(thisSpell->ID))
+			{
+				OutputResultConsole(psSearchSpells, thisSpell);
+			}
+			else if (!psSearchSpells.ShowMissingSpellsOnly && KnowSpell(thisSpell->ID))
+			{
+				OutputResultConsole(psSearchSpells, thisSpell);
+			}
 		}
+		return;
 	}
 	else
 	{
@@ -644,21 +715,39 @@ void OutputResultsCMD(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchL
 			thisSpell = pvMatchList.at(x);
 			if (thisSpell == nullptr) continue;
 
-			OutputResultConsole(psSearchSpells, thisSpell);
+			if (psSearchSpells.ShowAll)
+			{
+				OutputResultConsole(psSearchSpells, thisSpell);
+			}
+			else if (psSearchSpells.ShowMissingSpellsOnly && !KnowSpell(thisSpell->ID))
+			{
+				OutputResultConsole(psSearchSpells, thisSpell);
+			}
+			else if (!psSearchSpells.ShowMissingSpellsOnly && KnowSpell(thisSpell->ID))
+			{
+				OutputResultConsole(psSearchSpells, thisSpell);
+			}
 		}
-
+		return;
 	}
 }
 
 void OutputResultConsole(SpellSearch& psSearchSpells, PSPELL& pthisSpell)
 {
-	if (!psSearchSpells.ShowDetailedOutput)
+	psSearchSpells.SpellsShown++;
+
+	if (psSearchSpells.ShowDetailedOutput)
 	{
-		WriteChatf("\aw[ID: %*d] \ao[Level: %*d] \ag%s", 5, pthisSpell->ID, 3, pthisSpell->ClassLevel[GetPcProfile()->Class], pthisSpell->Name);
+		WriteChatf("\ayID: %d [%s] Lvl: %d Cat: %d SubCat: %d SubCat2: %d Grp: %d SubGrp: %d Class: %d SubClass: %d",
+			pthisSpell->ID, pthisSpell->Name, pthisSpell->ClassLevel[GetPcProfile()->Class], 
+			pthisSpell->Category, pthisSpell->Subcategory, pthisSpell->Subcategory2,
+			pthisSpell->SpellGroup, pthisSpell->SpellSubGroup,
+			pthisSpell->SpellClass, pthisSpell->SpellSubClass
+		);
 	}
 	else
 	{
-		WriteChatf("\aoID: %d [%s] Lvl: %d Cat: %d SubCat: %d", pthisSpell->ID, pthisSpell->Name, pthisSpell->ClassLevel[GetPcProfile()->Class], pthisSpell->Category, pthisSpell->Subcategory);
+		WriteChatf("\aw[ID: %*d] \ao[%*d] \ag[%s]", 5, pthisSpell->ID, 3, pthisSpell->ClassLevel[GetPcProfile()->Class], pthisSpell->Name);
 	}
 
 	if (psSearchSpells.ShowSpellEffects || psSearchSpells.ShowDetailedOutput)
@@ -672,10 +761,15 @@ void OutputResultConsole(SpellSearch& psSearchSpells, PSPELL& pthisSpell)
 			strcat_s(szBuff, ParseSpellEffect(pthisSpell, i, szTemp, sizeof(szTemp)));
 			if (szBuff[0] != 0) WriteChatf("  - %s", szBuff);
 		}
-
 		WriteChatf("\n");
+
+		DumpPSpellMembers(pthisSpell);
 	}
 }
+
+
+
+
 
 // Far from done.
 void ShowCMDHelp()
@@ -1020,6 +1114,195 @@ PLUGIN_API void OnUpdateImGui()//Maybe for use with an ImGui window to output a 
 		}
 	*/
 }
+
+void DumpPSpellMembers(PSPELL& pSpell)
+{
+	WriteChatf("[ActorTagID: %i] [AEDuration: %u] [AERange: %4.2f] [AffectInanimate: %d] [AIValidTargets: %u]",
+		pSpell->ActorTagId,
+		pSpell->AEDuration,
+		pSpell->AERange,
+		pSpell->AffectInanimate,
+		pSpell->AIValidTargets
+	);
+
+	WriteChatf("[AnimVariation: %u] [AutoCast: %i] [BaseEffectsFocusCap: %i] [BaseEffectsFocusOffset: %i] [BaseEffectsFocusSlope: %4.2f]",
+		pSpell->AnimVariation,
+		pSpell->Autocast,
+		pSpell->BaseEffectsFocusCap,
+		pSpell->BaseEffectsFocusOffset,
+		pSpell->BaseEffectsFocusSlope
+	);
+
+	WriteChatf("[bStacksWithDiscs: %d] [BypassRegenCheck: %d] [CalcIndex: %i] [CanCastInCombat: %d] [CanCastOutOfCombat: %d]",
+		pSpell->bStacksWithDiscs,
+		pSpell->BypassRegenCheck,
+		pSpell->CalcIndex,
+		pSpell->CanCastInCombat,
+		pSpell->CanCastOutOfCombat
+	);
+
+	WriteChatf("[CancelOnSit: %u] [CanMGB: %d] [CannotBeScribed: %d] [CastDifficulty: %u] [CasterRequirementID: %i]",
+		pSpell->CancelOnSit,
+		pSpell->CanMGB,
+		pSpell->CannotBeScribed,
+		pSpell->CastDifficulty,
+		pSpell->CasterRequirementID
+	);
+
+	WriteChatf("[CastingAnim: %u] [CastNotStanding: %d] [CastTime: %u] [ClassLevel: %u]",
+		pSpell->CastingAnim,
+		pSpell->CastNotStanding,
+		pSpell->CastTime,
+		pSpell->ClassLevel
+	);
+
+	WriteChatf("[ConeEndAngle: %i] [ConeStartAngle: %i] [CountdownHeld: %d] [CRC32Marker: %u] [CritChanceOverride: %i]",
+		pSpell->ConeEndAngle,
+		pSpell->ConeStartAngle,
+		pSpell->CountdownHeld,
+		pSpell->CRC32Marker,
+		pSpell->CritChanceOverride
+	);
+
+	WriteChatf("[Deletable: %d] [DescriptionIndex: %i] [Deity: %i] [DistanceMod: %4.2f]",
+		pSpell->Deletable,
+		pSpell->DescriptionIndex,
+		pSpell->Deity,
+		pSpell->DistanceMod
+	);
+
+	WriteChatf("[DurationCap: %u] [DurationParticleEffect: %i] [DurationType: %u] [DurationWindow: %d]",
+		pSpell->DurationCap,
+		pSpell->DurationParticleEffect,
+		pSpell->DurationType,
+		pSpell->DurationWindow
+	);
+
+	WriteChatf("[EnduranceCost: %i] [EnduranceValue: %i] [EnduranceUpkeep: %i] [Environment: %u]",
+		pSpell->EnduranceCost,
+		pSpell->EnduranceValue,
+		pSpell->EnduranceUpkeep,
+		pSpell->Environment
+	);
+
+	WriteChatf("[Feedbackable: %d] [HateGenerated: %i] [HateMod: %i] [HitCount: %i] [HitCountType: %i]",
+		pSpell->Feedbackable,
+		pSpell->HateGenerated,
+		pSpell->HateMod,
+		pSpell->HitCount,
+		pSpell->HitCountType
+	);
+
+	WriteChatf("[IsSkill: %d] [LightType: %u] [ManaCost: %i] [MaxResist: %i]",
+		pSpell->IsSkill,
+		pSpell->LightType,
+		pSpell->ManaCost,
+		pSpell->MaxResist
+	);
+
+	WriteChatf("[MaxSpreadTime: %i] [MaxTargets: %i] [MinRange: %4.2f] [MinResist: %i] [MinSpreadTime: %i]",
+		pSpell->MaxSpreadTime,
+		pSpell->MaxTargets,
+		pSpell->MinRange,
+		pSpell->MinResist,
+		pSpell->MinSpreadTime
+	);
+
+	WriteChatf("[NoBuffBlock: %d] [NoDispell: %d] [NoExpendReagent: %i] [NoHate: %d]",
+		pSpell->NoBuffBlock,
+		pSpell->NoDispell,
+		pSpell->NoExpendReagent,
+		pSpell->NoHate
+	);
+
+	WriteChatf("[NoHealDamageItemMod: %d] [NoNPCLOS: %d] [NoPartialSave: %d] [NoRemove: %d]",
+		pSpell->NoHealDamageItemMod,
+		pSpell->NoNPCLOS,
+		pSpell->NoPartialSave,
+		pSpell->NoRemove
+	);
+
+	WriteChatf("[NoResist: %d] [NoStripOnDeath: %d] [NotFocusable: %d] [NotStackableDot: %d] [NPCChanceofKnowingSpell: %u]",
+		pSpell->NoResist,
+		pSpell->NoStripOnDeath,
+		pSpell->NotFocusable,
+		pSpell->NotStackableDot,
+		pSpell->NPCChanceofKnowingSpell
+	);
+
+	WriteChatf("[NPCMemCategory: %i] [NPCUsefulness: %i] [NumEffects: %i] [OnlyDuringFastRegen: %d] [PCNPCOnlyFlag: %i]",
+		pSpell->NPCMemCategory,
+		pSpell->NPCUsefulness,
+		pSpell->NumEffects,
+		pSpell->OnlyDuringFastRegen,
+		pSpell->PCNPCOnlyFlag
+	);
+
+	WriteChatf("[PushBack: %4.2f] [PushUp: %4.2f] [PVPCalc: %i] [PVPDuration: %u] [PVPDurationCap: %u]",
+		pSpell->PushBack,
+		pSpell->PushUp,
+		pSpell->PvPCalc,
+		pSpell->PvPDuration,
+		pSpell->PvPDurationCap
+	);
+
+	WriteChatf("[PvPResistBase: %i] [PvPResistCap: %i] [Range: %4.2f] [ReagentID: %i]",
+		pSpell->PvPResistBase,
+		pSpell->PvPResistCap,
+		pSpell->Range,
+		pSpell->ReagentCount,
+		pSpell->ReagentID
+	);
+
+	WriteChatf("[RecastTime: %u] [RecoveryTime: %u] [Reflectable: %d] [Resist: %u] [ResistAdj: %i]",
+		pSpell->RecastTime,
+		pSpell->RecoveryTime,
+		pSpell->Reflectable,
+		pSpell->Resist,
+		pSpell->ResistAdj
+	);
+
+	WriteChatf("[ResistCap: %i] [ResistPerLevel: %i] [ReuseTimerIndex: %i] [Scribable: %i] [ShowWearOffMessage: %d]",
+		pSpell->ResistCap,
+		pSpell->ResistPerLevel,
+		pSpell->ReuseTimerIndex,
+		pSpell->Scribable,
+		pSpell->ShowWearOffMessage
+	);
+
+	WriteChatf("[Skill: %u] [SneakAttack: %d] [spaindex: %i] [SpellAnim: %i]",
+		pSpell->Skill,
+		pSpell->SneakAttack,
+		pSpell->spaindex,
+		pSpell->SpellAnim
+	);
+
+	WriteChatf("[SpellIcon: %i] [SpellRank: %i] [SpellReqAssociationID: %i]",
+		pSpell->SpellIcon,
+		pSpell->SpellRank,
+		pSpell->SpellReqAssociationID
+	);
+
+	WriteChatf("[SpreadRadius: %i] [StacksWithSelf: %d]",
+		pSpell->SpreadRadius,
+		pSpell->StacksWithSelf
+	);
+
+	WriteChatf("[TargetAnim: %u] [TargetType: %u] [TimeOfDay: %u]",
+		pSpell->TargetAnim,
+		pSpell->TargetType,
+		pSpell->TimeOfDay
+	);
+
+	WriteChatf("[TravelType: %u] [Uninterruptable: %d] [Unknown0x02C: %6.4f] [UsesPersistentParticles: %d] [ZoneType: %u]",
+		pSpell->TravelType,
+		pSpell->Uninterruptable,
+		pSpell->Unknown0x02C,
+		pSpell->UsesPersistentParticles,
+		pSpell->ZoneType
+	);
+}
+
 
 /*
 	Lists of Categories, SPA, Spell members from Spells.h, MQ2Spells.cpp
