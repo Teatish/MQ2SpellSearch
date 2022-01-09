@@ -1521,7 +1521,7 @@ void MQ2SpellSearchType::DumpPSpellMembers(PSPELL& pSpell)
 
 	for (int i=0; i<nEffects; ++i)
 	{
-		WriteChatf("Spell Effect %i: %i %s", GetSpellAttrib(pSpell, i), eEQSPAreversed[GetSpellAttrib(pSpell, i)].c_str());
+		WriteChatf("Spell Effect %i: %i %s", i, GetSpellAttrib(pSpell, i), eEQSPAreversed[GetSpellAttrib(pSpell, i)].c_str());
 	}
 
 }
