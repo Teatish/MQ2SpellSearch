@@ -1,3 +1,37 @@
+/* Color codes. From macroquest/docs echo.md
+\ab = black
+\a-b = black (dark)
+
+\ag = green
+\a-g = green (dark)
+
+\am = magenta
+\a-m = magenta (dark)
+
+\ao = orange
+\a-o = orange (dark)
+
+\ap = purple
+\a-p = purple (dark)
+
+\ar = red
+\a-r = red (dark)
+
+\at = cyan
+\a-t = cyan (dark)
+
+\au = blue
+\a-u = blue (dark)
+
+\aw = white
+\a-w = white (dark)
+
+\ay = yellow
+\a-y = yellow (dark)
+
+\ax = previous color (if no previous \a? this would be the default mq2 color)
+*/
+
 /*
  No currently built in method to reverse key value enumeration lookup, so did it the old fashioned way.
 */
@@ -533,12 +567,149 @@ std::string eEQSPAreversed[] =
 };
 
 
+enum class eEQSkills
+{
+	SKILL_1H_BLUNT,                // 0
+	SKILL_1H_SLASHING,             // 1
+	SKILL_2H_BLUNT,                // 2
+	SKILL_2H_SLASHING,             // 3
+	SKILL_ABJURATION,              // 4
+	SKILL_ALTERATION,              // 5
+	SKILL_APPLY_POISON,            // 6
+	SKILL_ARCHERY,                 // 7
+	SKILL_BACKSTAB,                // 8
+	SKILL_BIND_WOUND,              // 9
+	SKILL_BASH,                    // 10
+	SKILL_BLOCK,                   // 11
+	SKILL_BRASS_INSTRUMENTS,       // 12
+	SKILL_CHANNELING,              // 13
+	SKILL_CONJURATION,             // 14
+	SKILL_DEFENSE,                 // 15
+	SKILL_DISARM,                  // 16
+	SKILL_DISARM_TRAPS,            // 17
+	SKILL_DIVINATION,              // 18
+	SKILL_DODGE,                   // 19
+	SKILL_DOUBLE_ATTACK,           // 20
+	SKILL_DRAGON_PUNCH,            // 21
+	SKILL_DUAL_WIELD,              // 22
+	SKILL_EAGLE_STRIKE,            // 23
+	SKILL_EVOCATION,               // 24
+	SKILL_FEIGN_DEATH,             // 25
+	SKILL_FLYING_KICK,             // 26
+	SKILL_FORAGE,                  // 27
+	SKILL_HAND_TO_HAND,            // 28
+	SKILL_HIDE,                    // 29
+	SKILL_KICK,                    // 30
+	SKILL_MEDITATE,                // 31
+	SKILL_MEND,                    // 32
+	SKILL_OFFENSE,                 // 33
+	SKILL_PARRY,                   // 34
+	SKILL_PICK_LOCK,               // 35
+	SKILL_1H_PIERCING,             // 36
+	SKILL_RIPOSTE,                 // 37
+	SKILL_ROUND_KICK,              // 38
+	SKILL_SAFE_FALL,               // 39
+	SKILL_SENSE_HEADING,           // 40
+	SKILL_SINGING,                 // 41
+	SKILL_SNEAK,                   // 42 //anything above 100 means a successrate of 100%
+	SKILL_SPECIALIZE_ABJURE,       // 43
+	SKILL_SPECIALIZE_ALTERATION,   // 44
+	SKILL_SPECIALIZE_CONJURATION,  // 45
+	SKILL_SPECIALIZE_DIVINATION,   // 46
+	SKILL_SPECIALIZE_EVOCATION,    // 47
+	SKILL_PICK_POCKETS,            // 48
+	SKILL_STRINGED_INSTRUMENTS,    // 49
+	SKILL_SWIMMING,                // 50
+	SKILL_THROWING,                // 51
+	SKILL_TIGER_CLAW,              // 52
+	SKILL_TRACKING,                // 53
+	SKILL_WIND_INSTRUMENTS,        // 54
+	SKILL_FISHING,                 // 55
+	SKILL_MAKE_POISON,             // 56
+	SKILL_TINKERING,               // 57
+	SKILL_RESEARCH,                // 58
+	SKILL_ALCHEMY,                 // 59
+	SKILL_BAKING,                  // 60
+	SKILL_TAILORING,               // 61
+	SKILL_SENSE_TRAPS,             // 62
+	SKILL_BLACKSMITHING,           // 63
+	SKILL_FLETCHING,               // 64
+	SKILL_BREWING,                 // 65
+	SKILL_ALCOHOL_TOLERANCE,       // 66
+	SKILL_BEGGING,                 // 67
+	SKILL_JEWELRY_MAKING,          // 68
+	SKILL_POTTERY,                 // 69
+	SKILL_PERCUSSION_INSTRUMENTS,  // 70
+	SKILL_INTIMIDATION,            // 71
+	SKILL_BERSERKING,              // 72
+	SKILL_TAUNT,                   // 73
+	SKILL_FRENZY,                  // 74
+	SKILL_REMOVE_TRAP,             // 75
+	SKILL_TRIPLE_ATTACK,           // 76
+	SKILL_2H_PIERCING,             // 77
+	SKILL_78,                      // 78
+	SKILL_79,                      // 79
+	SKILL_80,                      // 80
+	SKILL_81,                      // 81
+	SKILL_82,                      // 82
+	SKILL_83,                      // 83
+	SKILL_84,                      // 84
+	SKILL_85,                      // 85
+	SKILL_86,                      // 86
+	SKILL_87,                      // 87
+	SKILL_88,                      // 88
+	SKILL_89,                      // 89
+	SKILL_90,                      // 90
+	SKILL_91,                      // 91
+	SKILL_92,                      // 92
+	SKILL_93,                      // 93
+	SKILL_94,                      // 94
+	SKILL_95,                      // 95
+	SKILL_96,                      // 96
+	SKILL_97,                      // 97
+	SKILL_98,                      // 98
+	SKILL_99,                      // 99
+	SKILL_100,                     // 100
+	SKILL_101,                     // 101
+	SKILL_102,                     // 102
+	SKILL_103,                     // 103
+	SKILL_104,                     // 104
+	SKILL_HARM_TOUCH,              // 105
+	SKILL_106,                     // 106
+	SKILL_LAY_HANDS,               // 107
+	SKILL_108,                     // 108
+	SKILL_109,                     // 109
+	SKILL_110,                     // 110
+	SKILL_SLAM,                    // 111
+	SKILL_112,                     // 112
+	SKILL_113,                     // 113
+	SKILL_INSPECT,                 // 114
+	SKILL_OPEN,                    // 115
+	SKILL_REVEAL_TRAP,             // 116
+	SKILL_117,                     // 117
+	SKILL_118,                     // 118
+	SKILL_119,                     // 119
+	SKILL_120,                     // 120
+	SKILL_121,                     // 121
+	SKILL_122,                     // 122
+	SKILL_123,                     // 123
+	SKILL_124,                     // 124
+	SKILL_125,                     // 125
+	SKILL_126,                     // 126
+	SKILL_127,                     // 127 this should be last one
+	SKILL_128,                     // 128 here for compatibility
+	SKILL_129,                     // 129 here for compatibility
+	SKILL_130,                     // 130 here for compatibility
+	SKILL_131,                     // 131 here for compatibility
+	SKILL_THROW_STONE,             // 132 here for compatibility 
+};
 
 /*
 	Lists of Categories, SPA, Spell members from Spells.h, MQ2Spells.cpp
 */
 
-/* //This is just a list of spell members to consider for using for searching spells.
+//This is just a list of spell members to consider for using for searching spells.
+/*
 void NothingButAList(PSPELL pSpell) {
 	pSpell->ActorTagId;
 	pSpell->AEDuration;
@@ -564,7 +735,7 @@ void NothingButAList(PSPELL pSpell) {
 	pSpell->CastNotStanding;
 	pSpell->CastTime;
 	pSpell->Category;
-	pSpell->ClassLevel;
+	pSpell->ClassLevel;  //array
 	pSpell->ConeEndAngle;
 	pSpell->ConeStartAngle;
 	pSpell->CountdownHeld;
@@ -584,7 +755,7 @@ void NothingButAList(PSPELL pSpell) {
 	pSpell->EnduranceValue;
 	pSpell->EnduranceUpkeep;
 	pSpell->Environment;
-	pSpell->Extra;
+	pSpell->Extra; // array
 	pSpell->Feedbackable;
 	pSpell->HateGenerated;
 	pSpell->HateMod;
@@ -603,7 +774,7 @@ void NothingButAList(PSPELL pSpell) {
 	pSpell->Name;
 	pSpell->NoBuffBlock;
 	pSpell->NoDispell;
-	pSpell->NoExpendReagent;
+	pSpell->NoExpendReagent; //array
 	pSpell->NoHate;
 	pSpell->NoHealDamageItemMod;
 	pSpell->NoNPCLOS;
@@ -628,8 +799,8 @@ void NothingButAList(PSPELL pSpell) {
 	pSpell->PvPResistBase;
 	pSpell->PvPResistCap;
 	pSpell->Range;
-	pSpell->ReagentCount;
-	pSpell->ReagentID;
+	pSpell->ReagentCount; //array
+	pSpell->ReagentID; //array
 	pSpell->RecastTime;
 	pSpell->RecoveryTime;
 	pSpell->Reflectable;
