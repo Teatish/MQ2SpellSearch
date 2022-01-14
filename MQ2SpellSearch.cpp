@@ -84,8 +84,12 @@ struct SpellSearch
 		float		Pushback			= -1;
 		int			HateGenerated		= -1;
 		int			TargetType			= -1;
-		int			NumEffects			= -1;
+		int			NumEffectsMin		= -1;
+		int			NumEffectsMax		= -1;
 		int			Skill				= -1;
+
+		// Use to search through spelleffects for keyword or phrase.
+		std::string SpellEffect			= "";
 
 		// SPA will turn into a vector struct - not fully implemented.
 		// This will allow multiple spell effects to be part of the query.
@@ -110,34 +114,36 @@ struct SpellSearch
 		bool SpellSearch::operator==(const SpellSearch& pOther) const
 		{
 			if (
-				ID					== pOther.ID &&
-				Name				== pOther.Name &&
-				PartialName			== pOther.PartialName &&
-				Class				== pOther.Class &&
-				MinLevel			== pOther.MinLevel &&
-				MaxLevel			== pOther.MaxLevel &&
-				Category			== pOther.Category &&
-				SubCategory			== pOther.SubCategory &&
-				SubCategory2		== pOther.SubCategory2 &&
-				SpellClass			== pOther.SpellClass &&
-				SpellSubClass		== pOther.SpellSubClass &&
-				SpellGroup			== pOther.SpellGroup &&
-				SpellSubGroup		== pOther.SpellSubGroup &&
+				ID == pOther.ID &&
+				Name == pOther.Name &&
+				PartialName == pOther.PartialName &&
+				Class == pOther.Class &&
+				MinLevel == pOther.MinLevel &&
+				MaxLevel == pOther.MaxLevel &&
+				Category == pOther.Category &&
+				SubCategory == pOther.SubCategory &&
+				SubCategory2 == pOther.SubCategory2 &&
+				SpellClass == pOther.SpellClass &&
+				SpellSubClass == pOther.SpellSubClass &&
+				SpellGroup == pOther.SpellGroup &&
+				SpellSubGroup == pOther.SpellSubGroup &&
 
-				Timer				== pOther.Timer &&
-				SpellRecordGiven	== pOther.SpellRecordGiven &&
-				IgnoreClass			== pOther.IgnoreClass &&
-				ShowAll				== pOther.ShowAll &&
+				Timer == pOther.Timer &&
+				SpellRecordGiven == pOther.SpellRecordGiven &&
+				IgnoreClass == pOther.IgnoreClass &&
+				ShowAll == pOther.ShowAll &&
 
-				Reflectable			== pOther.Reflectable &&
-				Feedbackable		== pOther.Feedbackable &&
-				Range				== pOther.Range &&
-				AERange				== pOther.AERange &&
-				Pushback			== pOther.Pushback &&
-				HateGenerated		== pOther.HateGenerated &&
-				TargetType			== pOther.TargetType &&
-				NumEffects			== pOther.NumEffects &&
-				Skill				== pOther.Skill
+				Reflectable == pOther.Reflectable &&
+				Feedbackable == pOther.Feedbackable &&
+				Range == pOther.Range &&
+				AERange == pOther.AERange &&
+				Pushback == pOther.Pushback &&
+				HateGenerated == pOther.HateGenerated &&
+				TargetType == pOther.TargetType &&
+				NumEffectsMin == pOther.NumEffectsMin &&
+				NumEffectsMax == pOther.NumEffectsMax &&
+				Skill == pOther.Skill &&
+				SpellEffect == pOther.SpellEffect
 				)
 				return true;
 			return false;
@@ -173,8 +179,10 @@ struct SpellSearch
 				Pushback			!= pOther.Pushback ||
 				HateGenerated		!= pOther.HateGenerated ||
 				TargetType			!= pOther.TargetType ||
-				NumEffects			!= pOther.NumEffects ||
-				Skill				!= pOther.Skill
+				NumEffectsMin		!= pOther.NumEffectsMin ||
+				NumEffectsMax		!= pOther.NumEffectsMax ||
+				Skill				!= pOther.Skill ||
+				SpellEffect			!= pOther.SpellEffect
 				)
 				return true;
 			return false;
@@ -215,8 +223,10 @@ struct SpellSearch
 			Pushback			= pOther.Pushback;
 			HateGenerated		= pOther.HateGenerated;
 			TargetType			= pOther.TargetType;
-			NumEffects			= pOther.NumEffects;
+			NumEffectsMin		= pOther.NumEffectsMin;
+			NumEffectsMax		= pOther.NumEffectsMax;
 			Skill				= pOther.Skill;
+			SpellEffect			= pOther.SpellEffect;
 		}
 
 		void CacheView(const SpellSearch& pOther)
@@ -267,8 +277,10 @@ struct SpellSearch
 			Pushback			= -1;
 			HateGenerated		= -1;
 			TargetType			= -1;
-			NumEffects			= -1;
+			NumEffectsMin		= -1;
+			NumEffectsMax		= -1;
 			Skill				= -1;
+			SpellEffect			= "";
 
 			// PH this will be converted into a struct
 			SPA = -1;
@@ -722,6 +734,14 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return szRest;
 		}
 
+		// Search string
+		if (!_stricmp(szArg, "SpellEffect") || !_stricmp(szArg, "-spelleffect"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.SpellEffect = szArg;
+			return GetNextArg(szRest, 1);
+		}
+
 		// Flag
 		if (!_stricmp(szArg, "ShowDetailedOutput") || !_stricmp(szArg, "-showdetailedoutput") || !_stricmp(szArg, "-sdo"))
 		{
@@ -836,6 +856,20 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return GetNextArg(szRest, 1);
 		}
 
+		if (!_stricmp(szArg, "NumEffectsMin") || !_stricmp(szArg, "-numeffectsmin"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.NumEffectsMin = atoi(szArg);
+			return GetNextArg(szRest, 1);
+		}
+
+		if (!_stricmp(szArg, "NumEffectsMax") || !_stricmp(szArg, "-numeffectsmax"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.NumEffectsMax = atoi(szArg);
+			return GetNextArg(szRest, 1);
+		}
+
 		// If we get here, then we did not find a matching parameter. Let's assume its the spell unless
 		// it or partialname have been set. If they enclosed the name with quotes, then it will all be in
 		// szArg which will loop until done.
@@ -884,6 +918,13 @@ SpellSearch MQ2SpellSearchType::ParseSpellSearch(const char* Buffer)
 		}
 	}
 
+	if ((psSpellSearch.NumEffectsMax > -1) && psSpellSearch.NumEffectsMin > psSpellSearch.NumEffectsMax)
+	{ 
+		int tmp = psSpellSearch.NumEffectsMax;
+		psSpellSearch.NumEffectsMax = psSpellSearch.NumEffectsMin;
+		psSpellSearch.NumEffectsMin = tmp;
+	}
+
 	if (psSpellSearch.ShowFirstRecord && psSpellSearch.ShowLastRecord)
 	{
 		// They negate, so turn them off. Otherwise the power grid will fail.
@@ -897,12 +938,10 @@ SpellSearch MQ2SpellSearchType::ParseSpellSearch(const char* Buffer)
 // If TLO, then WriteChatf is suppressed.
 std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, bool isCMD)
 {
-	/*
 	if (psSearchSpells.Debug)
 	{
-		WriteChatf("DEBUG :: FindSpells: Skill %i", psSearchSpells.Skill);
+		WriteChatf("DEBUG :: FindSpells: SpellEffect %s", psSearchSpells.SpellEffect.c_str());
 	}
-	*/
 
 	std::vector<PSPELL> pvMatchList;
 	PSPELL thisSpell = nullptr;
@@ -1033,6 +1072,8 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 	int iSrchReflectable = 0;
 	int iSrchTargetType = 0;
 	int iSrchSkill = 0;
+	int iSrchNumEffects = 0;
+	int iSrchSpellEffect = 0;
 
 	int iSpells = sizeof(pSpellMgr->Spells);
 
@@ -1062,6 +1103,8 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 		iSrchReflectable = 0;
 		iSrchTargetType = 0;
 		iSrchSkill = 0;
+		iSrchNumEffects = 0;
+		iSrchSpellEffect = 0;
 
 		thisSpell = pSpellMgr->GetSpellByID(x);
 		if (thisSpell == nullptr)
@@ -1137,6 +1180,26 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 			WriteChatf("DEBUG:: Spell skill: %i Parameter: %i", (int)thisSpell->Skill, psSearchSpells.Skill);
 		}
 
+		if (psSearchSpells.NumEffectsMin != -1 || psSearchSpells.NumEffectsMax != -1)
+		{
+			iSrchNumEffects = 1;
+			NumParams++;
+
+			// If both are specified, we look for the range between. Otherwise, we assume that a match is expected
+			if (psSearchSpells.NumEffectsMin > -1 && psSearchSpells.NumEffectsMax > -1)
+			{
+				if ((int)thisSpell->NumEffects < psSearchSpells.NumEffectsMin || (int)thisSpell->NumEffects > psSearchSpells.NumEffectsMax) continue;
+			}
+			else if (psSearchSpells.NumEffectsMin > -1)
+			{
+				if ((int)thisSpell->NumEffects != psSearchSpells.NumEffectsMin) continue;
+			}
+			else if (psSearchSpells.NumEffectsMax > -1)
+			{
+				if ((int)thisSpell->NumEffects != psSearchSpells.NumEffectsMax) continue;
+			}
+		}
+
 		if (psSearchSpells.Skill != -1)
 		{
 			iSrchSkill = 1;
@@ -1189,13 +1252,36 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 				if (ClassLevel < MinLevelValue || ClassLevel > MaxLevelValue) continue;
 			}
 		}
-		// Should this require at least one of the spell categories? It's going to be slow.
+
 		if (!string_equals(psSearchSpells.PartialName, ""))
 		{
 			NumParams++;
 			iSrchPartialName = 1;
 			int iPosition = ci_find_substr(thisSpell->Name, psSearchSpells.PartialName);
-			//WriteChatf("[%s] ?= [%s] (%i)", thisSpell->Name, SearchSpells.PartialName, iPosition);
+			if (iPosition < 0) continue;
+		}
+
+		// This is an expensive search... hopefully more refined criteria are being applied as well.
+		if (!string_equals(psSearchSpells.SpellEffect, ""))
+		{
+			NumParams++;
+			iSrchSpellEffect = 1;
+
+			char szBuff[MAX_STRING] = { 0 };
+			char szTemp[MAX_STRING] = { 0 };
+			int iPosition = 0;
+
+			for (int i = 0; i < GetSpellNumEffects(thisSpell); i++)
+			{
+				szBuff[0] = szTemp[0] = 0;
+				strcat_s(szBuff, ParseSpellEffect(thisSpell, i, szTemp, sizeof(szTemp)));
+
+				if (szBuff[0] != 0)
+				{
+					iPosition = ci_find_substr(szBuff, psSearchSpells.SpellEffect.c_str());				
+					if (iPosition >= 0) break;
+				}
+			}
 			if (iPosition < 0) continue;
 		}
 
@@ -1204,7 +1290,8 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 		// 
 
 		// We searched all the parameters we specified. If we are here, we found something.
-		if (NumParams == (	iSrchPartialName +
+		if (NumParams == (
+							iSrchPartialName +
 							iSrchCat +
 							iSrchSubCat +
 							iSrchSubCat2 +
@@ -1216,8 +1303,10 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 							iSrchSkill +
 							iSrchFeedback +
 							iSrchReflectable +
-							iSrchTargetType
-												))
+							iSrchTargetType +
+							iSrchNumEffects +
+							iSrchSpellEffect
+						))
 		{
 			pvMatchList.push_back(thisSpell);
 		}
