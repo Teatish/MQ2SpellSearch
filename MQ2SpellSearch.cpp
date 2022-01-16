@@ -1754,31 +1754,28 @@ bool MQ2SpellSearchType::GetSpellSearchState(std::string_view query)
 
 	if (pSpellSearch->SearchSpells.TriggerIndex != -1)
 	{
+		int triggerindex = pSpellSearch->SearchSpells.TriggerIndex;
+		int numeffects = GetSpellNumEffects(vTempList.at(recordID));
 
-		int numEffects = GetSpellNumEffects(vTempList.at(recordID));
+		if (triggerindex >= numeffects) return false;
 
-		if (pSpellSearch->SearchSpells.Debug)
-		{
-			WriteChatf("DEBUG :: NumEffects: %i TriggerIndex %i", numEffects, pSpellSearch->SearchSpells.TriggerIndex);
-		}
+		char szBuff[MAX_STRING] = { 0 };
+		char szTemp[MAX_STRING] = { 0 };
 
-		if (numEffects && pSpellSearch->SearchSpells.TriggerIndex < numEffects)
-		{
-			char szBuff[MAX_STRING] = { 0 };
-			char szTemp[MAX_STRING] = { 0 };
-			szBuff[0] = szTemp[0] = 0;
-			std::string_view tmpStr;
+		szBuff[0] = szTemp[0] = 0;
+		std::string_view tmpStr;
 
-			strcat_s(szBuff, ParseSpellEffect(vTempList.at(recordID), pSpellSearch->SearchSpells.TriggerIndex, szTemp, sizeof(szTemp)));
-			if (szBuff[0] == 0) return false;
+		strcat_s(szBuff, ParseSpellEffect(vTempList.at(recordID), triggerindex, szTemp, sizeof(szTemp)));
+		if (szBuff[0] == 0) return false;
 
-			tmpStr = szBuff;
+		tmpStr = szBuff;
 
-			tmpStr.remove_prefix(ci_find_substr(tmpStr, "(Spell: ") + 8);
-			tmpStr.remove_suffix(1);
+		if (ci_find_substr(tmpStr, "(Spell: ") == -1) return false;
 
-			pSpellSearch->triggername = tmpStr;
-		}
+		tmpStr.remove_prefix(ci_find_substr(tmpStr, "(Spell: ") + 8);
+		tmpStr.remove_suffix(1);
+
+		pSpellSearch->triggername = tmpStr;
 	}
 	return true;
 }
