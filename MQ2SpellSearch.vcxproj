@@ -59,7 +59,7 @@
     <ClCompile Include="MQ2SpellSearch.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MQ2SpellSearch.h">
+    <ClInclude Include="MQ2SpellSearchH.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="resource.h" />

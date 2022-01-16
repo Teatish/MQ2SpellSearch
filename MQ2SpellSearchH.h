@@ -1,3 +1,8 @@
+/*
+	Changed file name from MQ2SpellSearch.h to MQ2SpellSearchH.h
+	to avoid any potential naming conflict with the one in src/main.
+*/
+
 /* Color codes. From macroquest/docs echo.md
 \ab = black
 \a-b = black (dark)

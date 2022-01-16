@@ -12,7 +12,7 @@
 */
 
 #include <mq/Plugin.h>
-#include <MQ2SpellSearch.h>
+#include <MQ2SpellSearchH.h>
 
 PreSetup("MQ2SpellSearch");
 PLUGIN_VERSION(0.1);
@@ -103,6 +103,8 @@ struct SpellSearch
 		bool ShowDetailedOutput		= defShowDetailedOutput;
 		int  VectorRecord			= defVectorRecord;
 		bool IgnoreRank				= defIgnoreRank;
+		int	 TriggerIndex			= -1;
+
 		bool Debug					= defDebug;
 
 		// Allow comparison of SpellSearch objects. Data only / params given by user, not looked up like nCategory.
@@ -234,6 +236,7 @@ struct SpellSearch
 			ShowDetailedOutput		= pOther.ShowDetailedOutput;
 			VectorRecord			= pOther.VectorRecord;
 			IgnoreRank				= pOther.IgnoreRank;
+			TriggerIndex			= pOther.TriggerIndex;
 			Debug					= pOther.Debug;
 		}
 
@@ -285,6 +288,7 @@ struct SpellSearch
 			WriteChatf("ShowView :: ShowDetailedOutput      [%i]", ShowDetailedOutput);
 			WriteChatf("ShowView :: VectorRecord            [%i]", VectorRecord);
 			WriteChatf("ShowView :: IgnoreRank              [%i]", IgnoreRank);
+			WriteChatf("ShowView :: TriggerIndex            [%i]", TriggerIndex);
 			WriteChatf("ShowView :: Debug                   [%i]", Debug);
 		}
 
@@ -336,6 +340,7 @@ struct SpellSearch
 			ShowDetailedOutput		= defShowDetailedOutput;
 			VectorRecord			= defVectorRecord;
 			IgnoreRank				= defIgnoreRank;
+			TriggerIndex			= -1;
 			Debug					= defDebug;
 		}
 };
@@ -392,6 +397,7 @@ struct SPELLSEARCHELEMENT
 		int spellclass = -1;
 		int spellsubclass = -1;
 		int recordID = -1;
+		std::string triggername = "";
 
 		std::string rawquery = "";
 		std::string trimmedquery = "";
@@ -415,6 +421,7 @@ struct SPELLSEARCHELEMENT
 			spellclass = -1;
 			spellsubclass = -1;
 			recordID =-1;
+			triggername = "";
 
 			rawquery = "";
 			trimmedquery = "";
@@ -441,6 +448,7 @@ enum class SpellSearchMembers
 	Count,
 	RecordID,
 	Query,
+	TriggerName,
 };
 
 MQ2SpellSearchType::MQ2SpellSearchType() : MQ2Type("SpellSearch")
@@ -456,6 +464,7 @@ MQ2SpellSearchType::MQ2SpellSearchType() : MQ2Type("SpellSearch")
 	ScopedTypeMember(SpellSearchMembers, Count);
 	ScopedTypeMember(SpellSearchMembers, RecordID);
 	ScopedTypeMember(SpellSearchMembers, Query);
+	ScopedTypeMember(SpellSearchMembers, TriggerName);
 }
 
 /*
@@ -585,6 +594,16 @@ bool MQ2SpellSearchType::GetMember(MQVarPtr VarPtr, const char* Member, char* In
 		}
 		return false;
 
+	case SpellSearchMembers::TriggerName:
+		if (GetSpellSearchState(pSpellSearch->query))
+		{
+			strcpy_s(DataTypeTemp, pSpellSearch->triggername.c_str());
+			Dest.Ptr = &DataTypeTemp[0];
+			Dest.Type = pStringType;
+			return true;
+		}
+		return false;
+
 	default:
 
 		break;
@@ -698,12 +717,29 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return GetNextArg(szRest, 1);
 		}
 
-		// This probably needs to go into a vector array as multiple criteria could be specified.
+		// Provide a way to submit multiples to tease apart spell lines?
 		if (!_stricmp(szArg, "SPA") || !_stricmp(szArg, "-spa"))
 		{
 			GetArg(szArg, szRest, 1);
-			psSpellSearch.SPA = atoi(szArg);
-			WriteChatf("SPA set to %i", psSpellSearch.SPA);
+
+			//auto spa = GetIntFromString(arg, -1);
+			//if (spa < 0)
+			//	spa = GetSPAFromName(std::string(arg).c_str());
+			//return SpellAffect(static_cast<eEQSPA>(spa));
+
+			char tmpArg[MAX_STRING] = { 0 };
+			strcpy_s(tmpArg, szArg);
+			_strupr_s(tmpArg);
+
+			//auto SPA = static_cast<eEQSPA>(GetSPAFromName(std::string(tmpArg).c_str()));
+
+			psSpellSearch.SPA = tmpArg;
+			psSpellSearch.nSPA = GetIntFromString(szArg, -1);
+			
+			if (psSpellSearch.Debug)
+			{
+				WriteChatf("DEBUG :: ParseSpellSearchArgs :: SPA given %s", tmpArg);
+			}
 			return GetNextArg(szRest, 1);
 		}
 
@@ -725,6 +761,15 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 		if (!_stricmp(szArg, "Scribable") || !_stricmp(szArg, "-scribable"))
 		{
 			psSpellSearch.CanScribe = true;
+			return szRest;
+		}
+
+		// Used to retrieve the name of spells (Spell: ) from triggers in slots
+		// If -triggerindex x is found, then the data retrieved will be from that triggered spell
+		if (!_stricmp(szArg, "TriggerIndex") || !_stricmp(szArg, "-triggerindex"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.TriggerIndex = atoi(szArg);
 			return szRest;
 		}
 
@@ -979,7 +1024,7 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 		pvMatchList.push_back(thisSpell);
 		return pvMatchList;
 	}
-
+	
 	// Look up the category and subcategory ids
 	int SpellCat = 0;
 	int SpellSubCat = 0;
@@ -1030,12 +1075,14 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 	}
 
 	// Unsure, but putting it in since it looks important.
+	
 	if (!string_equals(psSearchSpells.SubCategory2, ""))
 	{
 		trim(psSearchSpells.SubCategory2);
 		psSearchSpells.nSubCategory2 = atoi(psSearchSpells.SubCategory2.c_str());
 		SpellSubCat2 = psSearchSpells.nSubCategory;
 
+		/*
 		if (!SpellSubCat2)
 		{
 			SpellSubCat2 = (int)GetSpellCategoryFromName(psSearchSpells.SubCategory2.c_str());
@@ -1049,10 +1096,10 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 			}
 			return pvMatchList;
 		}
+		*/
 	}
 
 	// Look for spells that contain given criteria
-
 	int NextHighestLevelSpellID = 0;
 	int MaxLevelSpellID = 0;
 	int NextHighestLevel = 0;
@@ -1073,6 +1120,7 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 	int iSrchSkill = 0;
 	int iSrchNumEffects = 0;
 	int iSrchSpellEffect = 0;
+	int iSrchSPA = 0;
 
 	int iSpells = sizeof(pSpellMgr->Spells);
 
@@ -1102,6 +1150,7 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 		iSrchSkill = 0;
 		iSrchNumEffects = 0;
 		iSrchSpellEffect = 0;
+		iSrchSPA = 0;
 
 		thisSpell = pSpellMgr->GetSpellByID(x);
 		if (thisSpell == nullptr)
@@ -1231,6 +1280,38 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 			}
 		}
 
+		// Minimum length of a value of SPA_ is 4 chars
+		if (psSearchSpells.nSPA != -1 || psSearchSpells.SPA.length() > 4)
+		{
+			int nEffects = GetSpellNumEffects(thisSpell);
+			bool bFoundSPA = false;
+
+			if (psSearchSpells.nSPA != -1)
+			{
+				for (int j = 0; j < nEffects; ++j)
+				{
+					if (GetSpellAttrib(thisSpell, j) == psSearchSpells.nSPA)
+					{
+						bFoundSPA = true;
+						break;
+					}
+				}
+				if (!bFoundSPA) continue;
+			}
+			else
+			{
+				for (int j = 0; j < nEffects; ++j)
+				{
+					if (string_equals(eEQSPAreversed[GetSpellAttrib(thisSpell, j)].c_str(), psSearchSpells.SPA.c_str()))
+					{
+						bFoundSPA = true;
+						break;
+					}
+				}
+				if (!bFoundSPA) continue;
+			}
+		}
+
 		if (!string_equals(psSearchSpells.PartialName, ""))
 		{
 			NumParams++;
@@ -1281,7 +1362,8 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 							iSrchReflectable +
 							iSrchTargetType +
 							iSrchNumEffects +
-							iSrchSpellEffect
+							iSrchSpellEffect +
+							iSrchSPA
 						))
 		{
 			pvMatchList.push_back(thisSpell);
@@ -1669,6 +1751,20 @@ bool MQ2SpellSearchType::GetSpellSearchState(std::string_view query)
 	pSpellSearch->spellclass = vTempList.at(recordID)->SpellClass;
 	pSpellSearch->spellsubclass = vTempList.at(recordID)->SpellSubClass;
 	pSpellSearch->recordID = recordID;
+
+	if (pSpellSearch->SearchSpells.TriggerIndex != -1)
+	{
+		char szBuff[MAX_STRING] = { 0 };
+		char szTemp[MAX_STRING] = { 0 };
+
+		if (pSpellSearch->SearchSpells.TriggerIndex <= GetSpellNumEffects(vTempList.at(recordID)))
+		{
+			szBuff[0] = szTemp[0] = 0;
+			strcat_s(szBuff, ParseSpellEffect(vTempList.at(recordID), pSpellSearch->SearchSpells.TriggerIndex, szTemp, sizeof(szTemp)));
+			WriteChatf("Trigger: %s", szBuff);
+			if (szBuff[0] != 0) pSpellSearch->triggername = szBuff;
+		}
+	}
 
 	return true;
 }
