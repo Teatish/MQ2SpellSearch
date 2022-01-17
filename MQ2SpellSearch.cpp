@@ -79,19 +79,27 @@ struct SpellSearch
 		int			Feedbackable		= -1;
 		float		Range				= -1;
 		float		AERange				= -1;
+		int			SpreadRadius		= -1;
 		float		Pushback			= -1;
 		int			HateGenerated		= -1;
 		int			TargetType			= -1;
 		int			NumEffectsMin		= -1;
 		int			NumEffectsMax		= -1;
 		int			Skill				= -1;
+		int			MaxTargetsMin		= -1;
+		int			MaxTargetsMax		= -1;
+		int			ResistType			= -1;
 
 		// Use to search through spelleffects for keyword or phrase.
 		std::string SpellEffect			= "";
+		// Assumes a match is wanted. False means not found anywhere.
+		bool		bSpellEffectMod		= true;
 
 		// As implemented, allows 1 SPA lookup
 		std::string SPA					= "";
 		int			nSPA				= -1;
+		// Assumes a match is wanted. False means not found anywhere.
+		bool		bSPAMod				= true;
 
 		// Configuration settings - filters
 		bool CanScribe				= defCanScribe;
@@ -132,14 +140,20 @@ struct SpellSearch
 				Feedbackable		== pOther.Feedbackable &&
 				Range				== pOther.Range &&
 				AERange				== pOther.AERange &&
+				SpreadRadius		== pOther.SpreadRadius &&
 				Pushback			== pOther.Pushback &&
 				HateGenerated		== pOther.HateGenerated &&
 				TargetType			== pOther.TargetType &&
 				NumEffectsMin		== pOther.NumEffectsMin &&
 				NumEffectsMax		== pOther.NumEffectsMax &&
 				Skill				== pOther.Skill &&
+				MaxTargetsMin		== pOther.MaxTargetsMin &&
+				MaxTargetsMax		== pOther.MaxTargetsMax &&
+				ResistType			== pOther.ResistType &&
 				SpellEffect			== pOther.SpellEffect &&
-				SPA					== pOther.SPA
+				bSpellEffectMod		== pOther.bSpellEffectMod &&
+				SPA					== pOther.SPA &&
+				bSPAMod				== pOther.bSPAMod
 			)
 				return true;
 			return false;
@@ -170,14 +184,20 @@ struct SpellSearch
 				Feedbackable		!= pOther.Feedbackable ||
 				Range				!= pOther.Range ||
 				AERange				!= pOther.AERange ||
+				SpreadRadius		!= pOther.SpreadRadius ||
 				Pushback			!= pOther.Pushback ||
 				HateGenerated		!= pOther.HateGenerated ||
 				TargetType			!= pOther.TargetType ||
 				NumEffectsMin		!= pOther.NumEffectsMin ||
 				NumEffectsMax		!= pOther.NumEffectsMax ||
 				Skill				!= pOther.Skill ||
+				MaxTargetsMin		!= pOther.MaxTargetsMin ||
+				MaxTargetsMax		!= pOther.MaxTargetsMax ||
+				ResistType			!= pOther.ResistType ||
 				SpellEffect			!= pOther.SpellEffect ||
-				SPA					!= pOther.SPA
+				bSpellEffectMod		!= pOther.bSpellEffectMod ||
+				SPA					!= pOther.SPA ||
+				bSPAMod				!= pOther.bSPAMod
 			)
 				return true;
 			return false;
@@ -213,15 +233,21 @@ struct SpellSearch
 			Feedbackable		= pOther.Feedbackable;
 			Range				= pOther.Range;
 			AERange				= pOther.AERange;
+			SpreadRadius		= pOther.SpreadRadius;
 			Pushback			= pOther.Pushback;
 			HateGenerated		= pOther.HateGenerated;
 			TargetType			= pOther.TargetType;
 			NumEffectsMin		= pOther.NumEffectsMin;
 			NumEffectsMax		= pOther.NumEffectsMax;
 			Skill				= pOther.Skill;
+			MaxTargetsMin		= pOther.MaxTargetsMin;
+			MaxTargetsMax		= pOther.MaxTargetsMax;
+			ResistType			= pOther.ResistType;
 			SpellEffect			= pOther.SpellEffect;
+			bSpellEffectMod		= pOther.bSpellEffectMod;
 			SPA					= pOther.SPA;
 			nSPA				= pOther.nSPA;
+			bSPAMod				= pOther.bSPAMod;
 		}
 
 		void CacheView(const SpellSearch& pOther)
@@ -265,6 +291,7 @@ struct SpellSearch
 			WriteChatf("ShowData :: Feedbackable            [%i]", Feedbackable);
 			WriteChatf("ShowData :: Range                   [%4.2f]", Range);
 			WriteChatf("ShowData :: AERange                 [%4.2f]", AERange);
+			WriteChatf("ShowData :: SpreadRadius            [%i]", SpreadRadius);
 			WriteChatf("ShowData :: Pushback                [%4.2f]", Pushback);
 			WriteChatf("ShowData :: HateGenerated           [%i]", HateGenerated);
 			WriteChatf("ShowData :: TargetType              [%i]", TargetType);
@@ -272,9 +299,14 @@ struct SpellSearch
 			WriteChatf("ShowData :: NumEffectsMax           [%i]", NumEffectsMax);
 			WriteChatf("ShowData :: Reflectable             [%i]", Reflectable);
 			WriteChatf("ShowData :: Skill                   [%i]", Skill);
+			WriteChatf("ShowData :: MaxTargetsMin           [%i]", MaxTargetsMin);
+			WriteChatf("ShowData :: MaxTargetsMax           [%i]", MaxTargetsMax);
+			WriteChatf("ShowData :: ResistType              [%i]", ResistType);
 			WriteChatf("ShowData :: SpellEffect             [%s]", SpellEffect.c_str());
+			WriteChatf("ShowData :: bSpellEffectMod         [%d]", bSpellEffectMod);
 			WriteChatf("ShowData :: SPA                     [%s]", SPA.c_str());
 			WriteChatf("ShowData :: nSPA                    [%i]", nSPA);
+			WriteChatf("ShowData :: bSPAMod                 [%i]", bSPAMod);
 		}
 
 		void ShowView()
@@ -320,6 +352,7 @@ struct SpellSearch
 			Feedbackable			= -1;
 			Range					= -1;
 			AERange					= -1;
+			SpreadRadius			= -1;
 			Pushback				= -1;
 			HateGenerated			= -1;
 			TargetType				= -1;
@@ -327,9 +360,14 @@ struct SpellSearch
 			NumEffectsMax			= -1;
 			Skill					= -1;
 			SpellEffect				= "";
+			bSpellEffectMod			= true;
+			MaxTargetsMin			= -1;
+			MaxTargetsMax			= -1;
+			ResistType				= -1;
 
 			SPA						= "";
 			nSPA					= -1;
+			bSPAMod					= true;
 
 			CanScribe				= defCanScribe;
 			ShowSpellEffects		= defShowSpellEffects;
@@ -722,16 +760,23 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 		{
 			GetArg(szArg, szRest, 1);
 
-			//auto spa = GetIntFromString(arg, -1);
-			//if (spa < 0)
-			//	spa = GetSPAFromName(std::string(arg).c_str());
-			//return SpellAffect(static_cast<eEQSPA>(spa));
-
 			char tmpArg[MAX_STRING] = { 0 };
-			strcpy_s(tmpArg, szArg);
+			strcpy_s(tmpArg, sizeof(tmpArg), szArg);
 			_strupr_s(tmpArg);
 
-			//auto SPA = static_cast<eEQSPA>(GetSPAFromName(std::string(tmpArg).c_str()));
+			// Test for ! (not)
+			if (tmpArg[0] == 33)
+			{
+				psSpellSearch.bSPAMod = false;
+
+				// Delete the leading !
+				int i = 0;
+				for (i = 1; i < sizeof(tmpArg); ++i)
+				{
+					tmpArg[i - 1] = tmpArg[i];
+				}
+				tmpArg[i] = { 0 };
+			}
 
 			psSpellSearch.SPA = tmpArg;
 			psSpellSearch.nSPA = GetIntFromString(szArg, -1);
@@ -780,11 +825,30 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return szRest;
 		}
 
-		// Search string
+		// Search string - Prefix with ! to imply negative match.
 		if (!_stricmp(szArg, "SpellEffect") || !_stricmp(szArg, "-spelleffect"))
 		{
 			GetArg(szArg, szRest, 1);
-			psSpellSearch.SpellEffect = szArg;
+
+			char tmpArg[MAX_STRING] = { 0 };
+			strcpy_s(tmpArg, sizeof(tmpArg), szArg);
+			_strupr_s(tmpArg);
+
+			// Test for ! (not)
+			if (tmpArg[0] == 33)
+			{
+				psSpellSearch.bSpellEffectMod = false;
+
+				// Delete the leading !
+				int i = 0;
+				for (i = 1; i < sizeof(tmpArg); ++i)
+				{
+					tmpArg[i - 1] = tmpArg[i];
+				}
+				tmpArg[i] = { 0 };
+			}
+
+			psSpellSearch.SpellEffect = tmpArg;
 			return GetNextArg(szRest, 1);
 		}
 
@@ -916,6 +980,27 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return GetNextArg(szRest, 1);
 		}
 
+		if (!_stricmp(szArg, "MaxTargetsMin") || !_stricmp(szArg, "-maxtargetsmin"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.MaxTargetsMin = atoi(szArg);
+			return GetNextArg(szRest, 1);
+		}
+
+		if (!_stricmp(szArg, "MaxTargetsMax") || !_stricmp(szArg, "-maxtargetsmax"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.MaxTargetsMax = atoi(szArg);
+			return GetNextArg(szRest, 1);
+		}
+
+		if (!_stricmp(szArg, "ResistType") || !_stricmp(szArg, "-resisttype"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.ResistType = atoi(szArg);
+			return GetNextArg(szRest, 1);
+		}
+
 		// If we get here, then we did not find a matching parameter. Let's assume its the spell unless
 		// it or partialname have been set. If they enclosed the name with quotes, then it will all be in
 		// szArg which will loop until done.
@@ -969,6 +1054,13 @@ SpellSearch MQ2SpellSearchType::ParseSpellSearch(const char* Buffer)
 		int tmp = psSpellSearch.NumEffectsMax;
 		psSpellSearch.NumEffectsMax = psSpellSearch.NumEffectsMin;
 		psSpellSearch.NumEffectsMin = tmp;
+	}
+
+	if ((psSpellSearch.MaxTargetsMax > -1) && psSpellSearch.MaxTargetsMin > psSpellSearch.MaxTargetsMax)
+	{
+		int tmp = psSpellSearch.MaxTargetsMax;
+		psSpellSearch.MaxTargetsMax = psSpellSearch.MaxTargetsMin;
+		psSpellSearch.MaxTargetsMin = tmp;
 	}
 
 	if (psSpellSearch.ShowFirstRecord && psSpellSearch.ShowLastRecord)
@@ -1121,6 +1213,8 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 	int iSrchNumEffects = 0;
 	int iSrchSpellEffect = 0;
 	int iSrchSPA = 0;
+	int iSrchMaxTargets = 0;
+	int iSrchResistType = 0;
 
 	int iSpells = sizeof(pSpellMgr->Spells);
 
@@ -1151,6 +1245,8 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 		iSrchNumEffects = 0;
 		iSrchSpellEffect = 0;
 		iSrchSPA = 0;
+		iSrchMaxTargets = 0;
+		iSrchResistType = 0;
 
 		thisSpell = pSpellMgr->GetSpellByID(x);
 		if (thisSpell == nullptr)
@@ -1227,6 +1323,27 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 			}
 		}
 
+
+		if (psSearchSpells.MaxTargetsMin != -1 || psSearchSpells.MaxTargetsMax != -1)
+		{
+			iSrchMaxTargets = 1;
+			NumParams++;
+
+			// If both are specified, we look for the range between. Otherwise, we assume that a match is expected
+			if (psSearchSpells.MaxTargetsMin > -1 && psSearchSpells.MaxTargetsMax > -1)
+			{
+				if ((int)thisSpell->MaxTargets < psSearchSpells.MaxTargetsMin || (int)thisSpell->MaxTargets > psSearchSpells.MaxTargetsMax) continue;
+			}
+			else if (psSearchSpells.MaxTargetsMin > -1)
+			{
+				if ((int)thisSpell->MaxTargets != psSearchSpells.MaxTargetsMin) continue;
+			}
+			else if (psSearchSpells.MaxTargetsMax > -1)
+			{
+				if ((int)thisSpell->MaxTargets != psSearchSpells.MaxTargetsMax) continue;
+			}
+		}
+
 		if (psSearchSpells.Skill != -1)
 		{
 			iSrchSkill = 1;
@@ -1253,6 +1370,13 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 			iSrchFeedback = 1;
 			NumParams++;
 			if (thisSpell->Feedbackable != (bool)psSearchSpells.Feedbackable) continue;
+		}
+
+		if (psSearchSpells.ResistType != -1)
+		{
+			iSrchResistType = 1;
+			NumParams++;
+			if (thisSpell->Resist != psSearchSpells.ResistType) continue;
 		}
 
 		// If we ignore class, then level is meaningless.
@@ -1296,7 +1420,10 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 						break;
 					}
 				}
-				if (!bFoundSPA) continue;
+				// Negative match?
+				if (bFoundSPA && !psSearchSpells.bSPAMod) continue;
+				// Positive match?
+				if (!bFoundSPA && psSearchSpells.bSPAMod) continue;
 			}
 			else
 			{
@@ -1308,16 +1435,11 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 						break;
 					}
 				}
-				if (!bFoundSPA) continue;
+				// Negative match?
+				if (bFoundSPA && !psSearchSpells.bSPAMod) continue;
+				// Positive match?
+				if (!bFoundSPA && psSearchSpells.bSPAMod) continue;
 			}
-		}
-
-		if (!string_equals(psSearchSpells.PartialName, ""))
-		{
-			NumParams++;
-			iSrchPartialName = 1;
-			int iPosition = ci_find_substr(thisSpell->Name, psSearchSpells.PartialName);
-			if (iPosition < 0) continue;
 		}
 
 		// This is an expensive search... hopefully more refined criteria are being applied as well.
@@ -1338,9 +1460,23 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 				if (szBuff[0] != 0)
 				{
 					iPosition = ci_find_substr(szBuff, psSearchSpells.SpellEffect.c_str());				
-					if (iPosition >= 0) break;
+					if (iPosition >= 0)
+					{
+						break;
+					}
 				}
 			}
+			// Negative match?
+			if (iPosition >= 0 && !psSearchSpells.bSpellEffectMod) continue;
+			// Positive match?
+			if (iPosition < 0 && psSearchSpells.bSpellEffectMod) continue;
+		}
+
+		if (!string_equals(psSearchSpells.PartialName, ""))
+		{
+			NumParams++;
+			iSrchPartialName = 1;
+			int iPosition = ci_find_substr(thisSpell->Name, psSearchSpells.PartialName);
 			if (iPosition < 0) continue;
 		}
 
@@ -1363,7 +1499,9 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 							iSrchTargetType +
 							iSrchNumEffects +
 							iSrchSpellEffect +
-							iSrchSPA
+							iSrchSPA +
+							iSrchMaxTargets +
+							iSrchResistType
 						))
 		{
 			pvMatchList.push_back(thisSpell);
@@ -1743,7 +1881,22 @@ bool MQ2SpellSearchType::GetSpellSearchState(std::string_view query)
 		WriteChatf("recordID %i Records %i", recordID, szvMatchList);
 	}
 	pSpellSearch->id = vTempList.at(recordID)->ID;
-	pSpellSearch->name = vTempList.at(recordID)->Name;
+
+	if (pSpellSearch->SearchSpells.IgnoreRank)
+	{
+		const char* szTmp;
+		szTmp = &vTempList.at(recordID)->Name[0];
+		char szTmp2[MAX_STRING] = { 0 };
+		strcpy_s(szTmp2, sizeof(szTmp2), szTmp);
+
+		TruncateSpellRankName(szTmp2);
+		pSpellSearch->name = szTmp2;
+	}
+	else
+	{
+		pSpellSearch->name = vTempList.at(recordID)->Name;
+	}
+
 	pSpellSearch->level = vTempList.at(recordID)->ClassLevel[pProfile->Level];
 	pSpellSearch->category = vTempList.at(recordID)->Category;
 	pSpellSearch->subcategory = vTempList.at(recordID)->Subcategory;
@@ -1770,12 +1923,31 @@ bool MQ2SpellSearchType::GetSpellSearchState(std::string_view query)
 
 		tmpStr = szBuff;
 
-		if (ci_find_substr(tmpStr, "(Spell: ") == -1) return false;
+		if (ci_find_substr(tmpStr, "Spell: ") == -1) return false;
 
-		tmpStr.remove_prefix(ci_find_substr(tmpStr, "(Spell: ") + 8);
-		tmpStr.remove_suffix(1);
+		tmpStr.remove_prefix(ci_find_substr(tmpStr, "Spell: ") + 7);
+		
+		int closingposition = ci_find_substr(tmpStr, ")");
+		if (closingposition != -1)
+		{
+			int suffixindice = tmpStr.length() - closingposition;
+			tmpStr.remove_suffix(suffixindice);
+		}
 
-		pSpellSearch->triggername = tmpStr;
+		if (pSpellSearch->SearchSpells.IgnoreRank)
+		{
+			const char* szTmp;
+			szTmp = &tmpStr[0];
+			char szTmp2[MAX_STRING] = { 0 };
+			strcpy_s(szTmp2, sizeof(szTmp2), szTmp);
+
+			TruncateSpellRankName(szTmp2);
+			pSpellSearch->triggername = szTmp2;
+		}
+		else
+		{
+			pSpellSearch->triggername = tmpStr;
+		}
 	}
 	return true;
 }
