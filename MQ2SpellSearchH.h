@@ -3,6 +3,485 @@
 	to avoid any potential naming conflict with the one in src/main.
 */
 
+
+struct SpellSearch
+{
+private:
+
+	// Default values of filter settings.
+	const bool defCanScribe = false;
+	const bool defShowSpellEffects = false;
+
+	// Only spells the char can use are shown unless true.
+	const bool defShowAll = false;
+	const bool defShowMissingSpellsOnly = false;
+	const bool defShowReverse = false;
+	const bool defShowLastRecord = false;
+	const bool defShowFirstRecord = false;
+
+	const bool defShowDetailedOutput = false;
+	const bool defSpellRecordGiven = false;
+	const int  defVectorRecord = 0;
+
+	// Only show spells that are relevant to pchar classlevel.
+	const bool defIgnoreClass = false;
+
+	// Not sure of the intention.  I'm assuming that the rank
+	// need not be shown. "spell", "spell rk. II", "spell rk. III"
+	// should just show "spell", screening duplicates.
+	const bool defIgnoreRank = false;
+
+	const bool defDebug = false;
+
+	int eEQSPArev[sizeof(eEQSPA)];
+
+public:
+
+	// User supplied args
+	std::string RawQuery = "";
+
+	// Spell Data
+	int         ID = -1;
+	std::string Name = "";
+	std::string PartialName = "";
+	std::string Class = "";
+	int         MinLevel = 1;
+	int         MaxLevel = 1;
+	std::string Category = "";
+	int         nCategory = -1;
+	std::string SubCategory = "";
+	int         nSubCategory = -1;
+	std::string SubCategory2 = "";
+	int			nSubCategory2 = -1;
+	int			SpellClass = -1;
+	int			SpellSubClass = -1;
+
+	int         Timer = -1;
+	bool		SpellRecordGiven = defSpellRecordGiven;
+	bool		IgnoreClass = defIgnoreClass;
+	bool		ShowAll = defShowAll;
+	int			Reflectable = -1;
+	int			Feedbackable = -1;
+	float		Range = -1;
+	float		AERange = -1;
+	int			SpreadRadius = -1;
+	float		Pushback = -1;
+	int			HateGenerated = -1;
+	int			TargetType = -1;
+	int			NumEffectsMin = -1;
+	int			NumEffectsMax = -1;
+	int			Skill = -1;
+	int			MaxTargetsMin = -1;
+	int			MaxTargetsMax = -1;
+	int			ResistType = -1;
+
+	// Use to search through spelleffects for keyword or phrase.
+	std::string SpellEffect = "";
+	// Assumes a match is wanted. False means not found anywhere.
+	bool		bSpellEffectMod = true;
+
+	// As implemented, allows 1 SPA lookup
+	std::string SPA = "";
+	int			nSPA = -1;
+	// Assumes a match is wanted. False means not found anywhere.
+	bool		bSPAMod = true;
+
+	// Configuration settings - filters
+	bool CanScribe = defCanScribe;
+	bool ShowSpellEffects = defShowSpellEffects;
+	bool ShowMissingSpellsOnly = defShowMissingSpellsOnly;
+	bool ShowFirstRecord = defShowFirstRecord;
+	bool ShowLastRecord = defShowLastRecord;
+	bool ShowReverse = defShowReverse;
+	bool ShowDetailedOutput = defShowDetailedOutput;
+	int  VectorRecord = defVectorRecord;
+	bool IgnoreRank = defIgnoreRank;
+	int	 TriggerIndex = -1;
+
+	bool Debug = defDebug;
+
+	// Allow comparison of SpellSearch objects. Data only / params given by user, not looked up like nCategory.
+	bool SpellSearch::operator==(const SpellSearch& pOther) const
+	{
+		if (
+			ID == pOther.ID &&
+			Name == pOther.Name &&
+			PartialName == pOther.PartialName &&
+			Class == pOther.Class &&
+			MinLevel == pOther.MinLevel &&
+			MaxLevel == pOther.MaxLevel &&
+			Category == pOther.Category &&
+			SubCategory == pOther.SubCategory &&
+			SubCategory2 == pOther.SubCategory2 &&
+			SpellClass == pOther.SpellClass &&
+			SpellSubClass == pOther.SpellSubClass &&
+
+			Timer == pOther.Timer &&
+			SpellRecordGiven == pOther.SpellRecordGiven &&
+			IgnoreClass == pOther.IgnoreClass &&
+			ShowAll == pOther.ShowAll &&
+
+			Reflectable == pOther.Reflectable &&
+			Feedbackable == pOther.Feedbackable &&
+			Range == pOther.Range &&
+			AERange == pOther.AERange &&
+			SpreadRadius == pOther.SpreadRadius &&
+			Pushback == pOther.Pushback &&
+			HateGenerated == pOther.HateGenerated &&
+			TargetType == pOther.TargetType &&
+			NumEffectsMin == pOther.NumEffectsMin &&
+			NumEffectsMax == pOther.NumEffectsMax &&
+			Skill == pOther.Skill &&
+			MaxTargetsMin == pOther.MaxTargetsMin &&
+			MaxTargetsMax == pOther.MaxTargetsMax &&
+			ResistType == pOther.ResistType &&
+			SpellEffect == pOther.SpellEffect &&
+			bSpellEffectMod == pOther.bSpellEffectMod &&
+			SPA == pOther.SPA &&
+			bSPAMod == pOther.bSPAMod
+			)
+			return true;
+		return false;
+	}
+
+	// Allow comparison of SpellSearch objects. Data only.
+	bool SpellSearch::operator!=(const SpellSearch& pOther) const
+	{
+		if (
+			ID != pOther.ID ||
+			Name != pOther.Name ||
+			PartialName != pOther.PartialName ||
+			Class != pOther.Class ||
+			MinLevel != pOther.MinLevel ||
+			MaxLevel != pOther.MaxLevel ||
+			Category != pOther.Category ||
+			SubCategory != pOther.SubCategory ||
+			SubCategory2 != pOther.SubCategory2 ||
+			SpellClass != pOther.SpellClass ||
+			SpellSubClass != pOther.SpellSubClass ||
+
+			Timer != pOther.Timer ||
+			SpellRecordGiven != pOther.SpellRecordGiven ||
+			IgnoreClass != pOther.IgnoreClass ||
+			ShowAll != pOther.ShowAll ||
+
+			Reflectable != pOther.Reflectable ||
+			Feedbackable != pOther.Feedbackable ||
+			Range != pOther.Range ||
+			AERange != pOther.AERange ||
+			SpreadRadius != pOther.SpreadRadius ||
+			Pushback != pOther.Pushback ||
+			HateGenerated != pOther.HateGenerated ||
+			TargetType != pOther.TargetType ||
+			NumEffectsMin != pOther.NumEffectsMin ||
+			NumEffectsMax != pOther.NumEffectsMax ||
+			Skill != pOther.Skill ||
+			MaxTargetsMin != pOther.MaxTargetsMin ||
+			MaxTargetsMax != pOther.MaxTargetsMax ||
+			ResistType != pOther.ResistType ||
+			SpellEffect != pOther.SpellEffect ||
+			bSpellEffectMod != pOther.bSpellEffectMod ||
+			SPA != pOther.SPA ||
+			bSPAMod != pOther.bSPAMod
+			)
+			return true;
+		return false;
+	}
+
+	void CacheData(const SpellSearch& pOther)
+	{
+		// User supplied args
+		RawQuery = pOther.RawQuery;
+
+		// Data
+		ID = pOther.ID;
+		Name = pOther.Name;
+		PartialName = pOther.PartialName;
+		Class = pOther.Class;
+		MinLevel = pOther.MinLevel;
+		MaxLevel = pOther.MaxLevel;
+		Category = pOther.Category;
+		nCategory = pOther.nCategory;
+		SubCategory = pOther.SubCategory;
+		nSubCategory = pOther.nSubCategory;
+		SubCategory2 = pOther.SubCategory2;
+		nSubCategory2 = pOther.nSubCategory2;
+		SpellClass = pOther.SpellClass;
+		SpellSubClass = pOther.SpellSubClass;
+
+		Timer = pOther.Timer;
+		SpellRecordGiven = pOther.SpellRecordGiven;
+		IgnoreClass = pOther.IgnoreClass;
+		ShowAll = pOther.ShowAll;
+
+		Reflectable = pOther.Reflectable;
+		Feedbackable = pOther.Feedbackable;
+		Range = pOther.Range;
+		AERange = pOther.AERange;
+		SpreadRadius = pOther.SpreadRadius;
+		Pushback = pOther.Pushback;
+		HateGenerated = pOther.HateGenerated;
+		TargetType = pOther.TargetType;
+		NumEffectsMin = pOther.NumEffectsMin;
+		NumEffectsMax = pOther.NumEffectsMax;
+		Skill = pOther.Skill;
+		MaxTargetsMin = pOther.MaxTargetsMin;
+		MaxTargetsMax = pOther.MaxTargetsMax;
+		ResistType = pOther.ResistType;
+		SpellEffect = pOther.SpellEffect;
+		bSpellEffectMod = pOther.bSpellEffectMod;
+		SPA = pOther.SPA;
+		nSPA = pOther.nSPA;
+		bSPAMod = pOther.bSPAMod;
+	}
+
+	void CacheView(const SpellSearch& pOther)
+	{
+		// View
+		CanScribe = pOther.CanScribe;
+		ShowSpellEffects = pOther.ShowSpellEffects;
+		ShowMissingSpellsOnly = pOther.ShowMissingSpellsOnly;
+		ShowReverse = pOther.ShowReverse;
+		ShowFirstRecord = pOther.ShowFirstRecord;
+		ShowLastRecord = pOther.ShowLastRecord;
+		ShowDetailedOutput = pOther.ShowDetailedOutput;
+		VectorRecord = pOther.VectorRecord;
+		IgnoreRank = pOther.IgnoreRank;
+		TriggerIndex = pOther.TriggerIndex;
+		Debug = pOther.Debug;
+	}
+
+	void ShowData()
+	{
+		WriteChatf("ShowData :: RawQuery                [%s]", RawQuery.c_str());
+		WriteChatf("ShowData :: ID                      [%i]", ID);
+		WriteChatf("ShowData :: Name                    [%s]", Name.c_str());
+		WriteChatf("ShowData :: PartialName             [%s]", PartialName.c_str());
+		WriteChatf("ShowData :: Class                   [%s]", Class.c_str());
+		WriteChatf("ShowData :: MinLevel                [%i]", MinLevel);
+		WriteChatf("ShowData :: MaxLevel                [%i]", MaxLevel);
+		WriteChatf("ShowData :: Category                [%s]", Category.c_str());
+		WriteChatf("ShowData :: nCategory               [%i]", nCategory);
+		WriteChatf("ShowData :: SubCategory             [%s]", SubCategory.c_str());
+		WriteChatf("ShowData :: nSubCategory            [%i]", nSubCategory);
+		WriteChatf("ShowData :: SubCategory2            [%s]", SubCategory2.c_str());
+		WriteChatf("ShowData :: nSubCategory2           [%i]", nSubCategory2);
+		WriteChatf("ShowData :: SpellClass              [%i]", SpellClass);
+		WriteChatf("ShowData :: SpellSubClass           [%i]", SpellSubClass);
+		WriteChatf("ShowData :: Timer                   [%i]", Timer);
+		WriteChatf("ShowData :: SpellRecordGiven        [%d]", SpellRecordGiven);
+		WriteChatf("ShowData :: IgnoreClass             [%d]", IgnoreClass);
+		WriteChatf("ShowData :: ShowAll                 [%d]", ShowAll);
+		WriteChatf("ShowData :: Reflectable             [%i]", Reflectable);
+		WriteChatf("ShowData :: Feedbackable            [%i]", Feedbackable);
+		WriteChatf("ShowData :: Range                   [%4.2f]", Range);
+		WriteChatf("ShowData :: AERange                 [%4.2f]", AERange);
+		WriteChatf("ShowData :: SpreadRadius            [%i]", SpreadRadius);
+		WriteChatf("ShowData :: Pushback                [%4.2f]", Pushback);
+		WriteChatf("ShowData :: HateGenerated           [%i]", HateGenerated);
+		WriteChatf("ShowData :: TargetType              [%i]", TargetType);
+		WriteChatf("ShowData :: NumEffectsMin           [%i]", NumEffectsMin);
+		WriteChatf("ShowData :: NumEffectsMax           [%i]", NumEffectsMax);
+		WriteChatf("ShowData :: Reflectable             [%i]", Reflectable);
+		WriteChatf("ShowData :: Skill                   [%i]", Skill);
+		WriteChatf("ShowData :: MaxTargetsMin           [%i]", MaxTargetsMin);
+		WriteChatf("ShowData :: MaxTargetsMax           [%i]", MaxTargetsMax);
+		WriteChatf("ShowData :: ResistType              [%i]", ResistType);
+		WriteChatf("ShowData :: SpellEffect             [%s]", SpellEffect.c_str());
+		WriteChatf("ShowData :: bSpellEffectMod         [%d]", bSpellEffectMod);
+		WriteChatf("ShowData :: SPA                     [%s]", SPA.c_str());
+		WriteChatf("ShowData :: nSPA                    [%i]", nSPA);
+		WriteChatf("ShowData :: bSPAMod                 [%i]", bSPAMod);
+	}
+
+	void ShowView()
+	{
+		WriteChatf("ShowView :: CanScribe               [%i]", CanScribe);
+		WriteChatf("ShowView :: ShowSpellEffects        [%i]", ShowSpellEffects);
+		WriteChatf("ShowView :: ShowMissingSpellsOnly   [%i]", ShowMissingSpellsOnly);
+		WriteChatf("ShowView :: ShowReverse             [%i]", ShowReverse);
+		WriteChatf("ShowView :: ShowFirstRecord         [%i]", ShowFirstRecord);
+		WriteChatf("ShowView :: ShowLastRecord          [%i]", ShowLastRecord);
+		WriteChatf("ShowView :: ShowDetailedOutput      [%i]", ShowDetailedOutput);
+		WriteChatf("ShowView :: VectorRecord            [%i]", VectorRecord);
+		WriteChatf("ShowView :: IgnoreRank              [%i]", IgnoreRank);
+		WriteChatf("ShowView :: TriggerIndex            [%i]", TriggerIndex);
+		WriteChatf("ShowView :: Debug                   [%i]", Debug);
+	}
+
+	void Clear()
+	{
+		RawQuery = "";
+
+		ID = -1;
+		Name = "";
+		PartialName = "";
+		Class = "";
+		MinLevel = 1;
+		MaxLevel = 1;
+		Category = "";
+		nCategory = -1;
+		SubCategory = "";
+		nSubCategory = -1;
+		SubCategory2 = "";
+		nSubCategory2 = -1;
+		SpellClass = -1;
+		SpellSubClass = -1;
+
+		Timer = -1;
+		SpellRecordGiven = defSpellRecordGiven;
+		IgnoreClass = defIgnoreClass;
+		ShowAll = defShowAll;
+
+		Reflectable = -1;
+		Feedbackable = -1;
+		Range = -1;
+		AERange = -1;
+		SpreadRadius = -1;
+		Pushback = -1;
+		HateGenerated = -1;
+		TargetType = -1;
+		NumEffectsMin = -1;
+		NumEffectsMax = -1;
+		Skill = -1;
+		SpellEffect = "";
+		bSpellEffectMod = true;
+		MaxTargetsMin = -1;
+		MaxTargetsMax = -1;
+		ResistType = -1;
+
+		SPA = "";
+		nSPA = -1;
+		bSPAMod = true;
+
+		CanScribe = defCanScribe;
+		ShowSpellEffects = defShowSpellEffects;
+		ShowMissingSpellsOnly = defShowMissingSpellsOnly;
+		ShowReverse = defShowReverse;
+		ShowFirstRecord = defShowFirstRecord;
+		ShowLastRecord = defShowLastRecord;
+		ShowDetailedOutput = defShowDetailedOutput;
+		VectorRecord = defVectorRecord;
+		IgnoreRank = defIgnoreRank;
+		TriggerIndex = -1;
+		Debug = defDebug;
+	}
+};
+
+std::string TargetTypeAcronym[] =
+{
+	"NONE",      //TargetType_None = 0,
+	"LOS",       //TargetType_LineOfSight = 1,
+	"AEPC",      //TargetType_AEPC_v1 = 2,                 // players in area around caster
+	"GROUP",     //TargetType_Group_v1 = 3,                // group members around caster
+	"PBAE",      //TargetType_PBAE = 4,                    // area around caster
+	"SINGLE",    //TargetType_Single = 5,                  // current target
+	"SELF",      //TargetType_Self = 6,                    // targets self only
+	"UNKN7",
+	"AREA",      //TargetType_TargetArea = 8,              // radius around target
+	"ANIMAL",    //TargetType_TargetAnimal = 9,
+	"UNDEAD",    //TargetType_TargetUndead = 10,
+	"SUMMONED",  //TargetType_TargetSummoned = 11,
+	"UNKN12",
+	"DRAIN",     //TargetType_TargetDrain = 13,
+	"PETSELF",   //TargetType_Pet = 14,                    // caster's pet
+	"CORPSE",    //TargetType_TargetCorpse = 15,
+	"PLANT",     //TargetType_TargetPlant = 16,
+	"GIANT",     //TargetType_TargetGiants = 17,
+	"DRAGON",    //TargetType_TargetDragons = 18,
+	"COLDAIN",   //TargetType_TargetColdain = 19,
+	"AEDRAIN",   //TargetType_TargetAEDrain = 20,
+	"UNKN21",
+	"UNKN22",
+	"UNKN23",
+	"AEUNDEAD",  //TargetType_TargetAEUndead = 24,
+	"AESUMMON",  //TargetType_TargetAESummoned = 25,
+	"UNKN26",
+	"UNKN27",
+	"UNKN28",
+	"UNKN29",
+	"UNKN30",
+	"UNKN31",
+	"HATEINRNG", //TargetType_HateList = 32,               // all players on hatelist in range
+	"HATEOOR",   //TargetType_HateList_All = 33,           // all players on hatelist regardless of range
+	"CURSED",    //TargetType_TargetCursed = 34,
+	"MURAMITE",  //TargetType_TargetMuramite = 35,
+	"AEPC",      //TargetType_CasterAreaPC = 36,
+	"AENPC",     //TargetType_CasterAreaNPC = 37,
+	"PETOTHER",  //TargetType_Pet_v2 = 38,                 // targeted pet
+	"PC",        //TargetType_TargetPC = 39,               // targeted player
+	"AEBENEFIT", //TargetType_AEPC_v2 = 40,                // area beneficial players
+	"AEGROUP",   //TargetType_Group_v2 = 41,               // area grouped players
+	"CONE",      //TargetType_DirectionalCone = 42,        // projected cone in front of player
+	"GROUPEDPC", //TargetType_SingleGrouped = 43,          // single target grouped
+	"BEAM",      //TargetType_Beam = 44,
+	"AEFREE",    //TargetType_FreeTarget = 45,             // player picks a point in space
+	"TARGETOF",  //TargetType_TargetOfTarget = 46,
+	"PETOWNER",  //TargetType_PetOwner = 47,               // cast on pet's owner
+	"UNKN48",
+	"UNKN49",
+	"AEDETRMTL", //TargetType_AreaDetrimental = 50,        // targets enemies of caster
+	"UNKN51",
+	"BENEFIT",   //TargetType_TargetBeneficial = 52,
+};
+
+std::unordered_map<std::string, int> m_TargetTypeAcronym =
+{
+	{"NONE",		0},  //TargetType_None = 0,
+	{"LOS",			1},  //TargetType_LineOfSight = 1,
+	{"AEPC",		2},  //TargetType_AEPC_v1 = 2,                 // players in area around caster
+	{"GROUP",		3},  //TargetType_Group_v1 = 3,                // group members around caster
+	{"PBAE",		4},  //TargetType_PBAE = 4,                    // area around caster
+	{"SINGLE",		5},  //TargetType_Single = 5,                  // current target
+	{"SELF",		6},  //TargetType_Self = 6,                    // targets self only
+	{"UNKN7",		7},
+	{"AREA",		8},  //TargetType_TargetArea = 8,              // radius around target
+	{"ANIMAL",		9},  //TargetType_TargetAnimal = 9,
+	{"UNDEAD",		10}, //TargetType_TargetUndead = 10,
+	{"SUMMONED",	11}, //TargetType_TargetSummoned = 11,
+	{"UNKN12",		12},
+	{"DRAIN",		13}, //TargetType_TargetDrain = 13,
+	{"PETSELF",		14}, //TargetType_Pet = 14,                    // caster's pet
+	{"CORPSE",		15}, //TargetType_TargetCorpse = 15,
+	{"PLANT",		16}, //TargetType_TargetPlant = 16,
+	{"GIANT",		17}, //TargetType_TargetGiants = 17,
+	{"DRAGON",		18}, //TargetType_TargetDragons = 18,
+	{"COLDAIN",		19}, //TargetType_TargetColdain = 19,
+	{"AEDRAIN",		20}, //TargetType_TargetAEDrain = 20,
+	{"UNKN21",		21},
+	{"UNKN22",		22},
+	{"UNKN23",		23},
+	{"AEUNDEAD",	24}, //TargetType_TargetAEUndead = 24,
+	{"AESUMMON",	25}, //TargetType_TargetAESummoned = 25,
+	{"UNKN26",		26},
+	{"UNKN27",		27},
+	{"UNKN28",		28},
+	{"UNKN29",		29},
+	{"UNKN30",		30},
+	{"UNKN31",		31},
+	{"HATEINRNG",	32}, //TargetType_HateList = 32,               // all players on hatelist in range
+	{"HATEOOR",		33}, //TargetType_HateList_All = 33,           // all players on hatelist regardless of range
+	{"CURSED",		34}, //TargetType_TargetCursed = 34,
+	{"MURAMITE",	35}, //TargetType_TargetMuramite = 35,
+	{"AEPC",		36}, //TargetType_CasterAreaPC = 36,
+	{"AENPC",		37}, //TargetType_CasterAreaNPC = 37,
+	{"PETOTHER",	38}, //TargetType_Pet_v2 = 38,                 // targeted pet
+	{"PC",			39}, //TargetType_TargetPC = 39,               // targeted player
+	{"AEBENEFIT",	40}, //TargetType_AEPC_v2 = 40,                // area beneficial players
+	{"AEGROUP",		41}, //TargetType_Group_v2 = 41,               // area grouped players
+	{"CONE",		42}, //TargetType_DirectionalCone = 42,        // projected cone in front of player
+	{"GROUPEDPC",	43}, //TargetType_SingleGrouped = 43,          // single target grouped
+	{"BEAM",		44}, //TargetType_Beam = 44,
+	{"AEFREE",		45}, //TargetType_FreeTarget = 45,             // player picks a point in space
+	{"TARGETOF",	46}, //TargetType_TargetOfTarget = 46,
+	{"PETOWNER",	47}, //TargetType_PetOwner = 47,               // cast on pet's owner
+	{"UNKN48",		48},
+	{"UNKN49",		49},
+	{"AEDETRMTL",	50}, //TargetType_AreaDetrimental = 50,        // targets enemies of caster
+	{"UNKN51",		51},
+	{"BENEFIT",		52}, //TargetType_TargetBeneficial = 52,
+};
+
 /* Color codes. From macroquest/docs echo.md
 \ab = black
 \a-b = black (dark)
@@ -570,7 +1049,6 @@ std::string eEQSPAreversed[] =
 "SPA_DURATION_MANA_PCT",
 "SPA_DURATION_ENDURANCE_PCT",
 };
-
 
 enum class eEQSkills
 {

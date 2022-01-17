@@ -19,370 +19,6 @@ PLUGIN_VERSION(0.1);
 
 using namespace mq::datatypes;
 
-struct SpellSearch
-{
-	private:
-
-		// Default values of filter settings.
-		const bool defCanScribe				= false;
-		const bool defShowSpellEffects		= false;
-
-		// Only spells the char can use are shown unless true.
-		const bool defShowAll				= false;
-		const bool defShowMissingSpellsOnly = false;
-		const bool defShowReverse			= false;
-		const bool defShowLastRecord		= false;
-		const bool defShowFirstRecord		= false;
-
-		const bool defShowDetailedOutput	= false;
-		const bool defSpellRecordGiven		= false;
-		const int  defVectorRecord			= 0;
-
-		// Only show spells that are relevant to pchar classlevel.
-		const bool defIgnoreClass			= false;
-
-		// Not sure of the intention.  I'm assuming that the rank
-		// need not be shown. "spell", "spell rk. II", "spell rk. III"
-		// should just show "spell", screening duplicates.
-		const bool defIgnoreRank			= false;
-
-		const bool defDebug					= false;
-
-		int eEQSPArev[sizeof(eEQSPA)];
-
-	public:
-
-		// User supplied args
-		std::string RawQuery			= "";
-
-		// Spell Data
-		int         ID					= -1;
-		std::string Name				= "";
-		std::string PartialName			= "";
-		std::string Class				= "";
-		int         MinLevel			= 1;
-		int         MaxLevel			= 1;
-		std::string Category			= "";
-		int         nCategory			= -1;
-		std::string SubCategory			= "";
-		int         nSubCategory		= -1;
-		std::string SubCategory2		= "";
-		int			nSubCategory2		= -1;
-		int			SpellClass			= -1;
-		int			SpellSubClass		= -1;
-
-		int         Timer				= -1;
-		bool		SpellRecordGiven	= defSpellRecordGiven;
-		bool		IgnoreClass			= defIgnoreClass;
-		bool		ShowAll				= defShowAll;
-		int			Reflectable			= -1;
-		int			Feedbackable		= -1;
-		float		Range				= -1;
-		float		AERange				= -1;
-		int			SpreadRadius		= -1;
-		float		Pushback			= -1;
-		int			HateGenerated		= -1;
-		int			TargetType			= -1;
-		int			NumEffectsMin		= -1;
-		int			NumEffectsMax		= -1;
-		int			Skill				= -1;
-		int			MaxTargetsMin		= -1;
-		int			MaxTargetsMax		= -1;
-		int			ResistType			= -1;
-
-		// Use to search through spelleffects for keyword or phrase.
-		std::string SpellEffect			= "";
-		// Assumes a match is wanted. False means not found anywhere.
-		bool		bSpellEffectMod		= true;
-
-		// As implemented, allows 1 SPA lookup
-		std::string SPA					= "";
-		int			nSPA				= -1;
-		// Assumes a match is wanted. False means not found anywhere.
-		bool		bSPAMod				= true;
-
-		// Configuration settings - filters
-		bool CanScribe				= defCanScribe;
-		bool ShowSpellEffects		= defShowSpellEffects;
-		bool ShowMissingSpellsOnly	= defShowMissingSpellsOnly;
-		bool ShowFirstRecord		= defShowFirstRecord;
-		bool ShowLastRecord			= defShowLastRecord;
-		bool ShowReverse			= defShowReverse;
-		bool ShowDetailedOutput		= defShowDetailedOutput;
-		int  VectorRecord			= defVectorRecord;
-		bool IgnoreRank				= defIgnoreRank;
-		int	 TriggerIndex			= -1;
-
-		bool Debug					= defDebug;
-
-		// Allow comparison of SpellSearch objects. Data only / params given by user, not looked up like nCategory.
-		bool SpellSearch::operator==(const SpellSearch& pOther) const
-		{
-			if (
-				ID					== pOther.ID &&
-				Name				== pOther.Name &&
-				PartialName			== pOther.PartialName &&
-				Class				== pOther.Class &&
-				MinLevel			== pOther.MinLevel &&
-				MaxLevel			== pOther.MaxLevel &&
-				Category			== pOther.Category &&
-				SubCategory			== pOther.SubCategory &&
-				SubCategory2		== pOther.SubCategory2 &&
-				SpellClass			== pOther.SpellClass &&
-				SpellSubClass		== pOther.SpellSubClass &&
-
-				Timer				== pOther.Timer &&
-				SpellRecordGiven	== pOther.SpellRecordGiven &&
-				IgnoreClass			== pOther.IgnoreClass &&
-				ShowAll				== pOther.ShowAll &&
-
-				Reflectable			== pOther.Reflectable &&
-				Feedbackable		== pOther.Feedbackable &&
-				Range				== pOther.Range &&
-				AERange				== pOther.AERange &&
-				SpreadRadius		== pOther.SpreadRadius &&
-				Pushback			== pOther.Pushback &&
-				HateGenerated		== pOther.HateGenerated &&
-				TargetType			== pOther.TargetType &&
-				NumEffectsMin		== pOther.NumEffectsMin &&
-				NumEffectsMax		== pOther.NumEffectsMax &&
-				Skill				== pOther.Skill &&
-				MaxTargetsMin		== pOther.MaxTargetsMin &&
-				MaxTargetsMax		== pOther.MaxTargetsMax &&
-				ResistType			== pOther.ResistType &&
-				SpellEffect			== pOther.SpellEffect &&
-				bSpellEffectMod		== pOther.bSpellEffectMod &&
-				SPA					== pOther.SPA &&
-				bSPAMod				== pOther.bSPAMod
-			)
-				return true;
-			return false;
-		}
-
-		// Allow comparison of SpellSearch objects. Data only.
-		bool SpellSearch::operator!=(const SpellSearch& pOther) const
-		{
-			if (
-				ID					!= pOther.ID ||
-				Name				!= pOther.Name ||
-				PartialName			!= pOther.PartialName ||
-				Class				!= pOther.Class ||
-				MinLevel			!= pOther.MinLevel ||
-				MaxLevel			!= pOther.MaxLevel ||
-				Category			!= pOther.Category ||
-				SubCategory			!= pOther.SubCategory ||
-				SubCategory2		!= pOther.SubCategory2 ||
-				SpellClass			!= pOther.SpellClass ||
-				SpellSubClass		!= pOther.SpellSubClass ||
-
-				Timer				!= pOther.Timer ||
-				SpellRecordGiven	!= pOther.SpellRecordGiven ||
-				IgnoreClass			!= pOther.IgnoreClass ||
-				ShowAll				!= pOther.ShowAll ||
-
-				Reflectable			!= pOther.Reflectable ||
-				Feedbackable		!= pOther.Feedbackable ||
-				Range				!= pOther.Range ||
-				AERange				!= pOther.AERange ||
-				SpreadRadius		!= pOther.SpreadRadius ||
-				Pushback			!= pOther.Pushback ||
-				HateGenerated		!= pOther.HateGenerated ||
-				TargetType			!= pOther.TargetType ||
-				NumEffectsMin		!= pOther.NumEffectsMin ||
-				NumEffectsMax		!= pOther.NumEffectsMax ||
-				Skill				!= pOther.Skill ||
-				MaxTargetsMin		!= pOther.MaxTargetsMin ||
-				MaxTargetsMax		!= pOther.MaxTargetsMax ||
-				ResistType			!= pOther.ResistType ||
-				SpellEffect			!= pOther.SpellEffect ||
-				bSpellEffectMod		!= pOther.bSpellEffectMod ||
-				SPA					!= pOther.SPA ||
-				bSPAMod				!= pOther.bSPAMod
-			)
-				return true;
-			return false;
-		}
-
-		void CacheData(const SpellSearch& pOther)
-		{
-			// User supplied args
-			RawQuery			= pOther.RawQuery;
-
-			// Data
-			ID					= pOther.ID;
-			Name				= pOther.Name;
-			PartialName			= pOther.PartialName;
-			Class				= pOther.Class;
-			MinLevel			= pOther.MinLevel;
-			MaxLevel			= pOther.MaxLevel;
-			Category			= pOther.Category;
-			nCategory			= pOther.nCategory;
-			SubCategory			= pOther.SubCategory;
-			nSubCategory		= pOther.nSubCategory;
-			SubCategory2		= pOther.SubCategory2;
-			nSubCategory2		= pOther.nSubCategory2;
-			SpellClass			= pOther.SpellClass;
-			SpellSubClass		= pOther.SpellSubClass;
-
-			Timer				= pOther.Timer;
-			SpellRecordGiven	= pOther.SpellRecordGiven;
-			IgnoreClass			= pOther.IgnoreClass;
-			ShowAll				= pOther.ShowAll;
-
-			Reflectable			= pOther.Reflectable;
-			Feedbackable		= pOther.Feedbackable;
-			Range				= pOther.Range;
-			AERange				= pOther.AERange;
-			SpreadRadius		= pOther.SpreadRadius;
-			Pushback			= pOther.Pushback;
-			HateGenerated		= pOther.HateGenerated;
-			TargetType			= pOther.TargetType;
-			NumEffectsMin		= pOther.NumEffectsMin;
-			NumEffectsMax		= pOther.NumEffectsMax;
-			Skill				= pOther.Skill;
-			MaxTargetsMin		= pOther.MaxTargetsMin;
-			MaxTargetsMax		= pOther.MaxTargetsMax;
-			ResistType			= pOther.ResistType;
-			SpellEffect			= pOther.SpellEffect;
-			bSpellEffectMod		= pOther.bSpellEffectMod;
-			SPA					= pOther.SPA;
-			nSPA				= pOther.nSPA;
-			bSPAMod				= pOther.bSPAMod;
-		}
-
-		void CacheView(const SpellSearch& pOther)
-		{
-			// View
-			CanScribe				= pOther.CanScribe;
-			ShowSpellEffects		= pOther.ShowSpellEffects;
-			ShowMissingSpellsOnly	= pOther.ShowMissingSpellsOnly;
-			ShowReverse				= pOther.ShowReverse;
-			ShowFirstRecord			= pOther.ShowFirstRecord;
-			ShowLastRecord			= pOther.ShowLastRecord;
-			ShowDetailedOutput		= pOther.ShowDetailedOutput;
-			VectorRecord			= pOther.VectorRecord;
-			IgnoreRank				= pOther.IgnoreRank;
-			TriggerIndex			= pOther.TriggerIndex;
-			Debug					= pOther.Debug;
-		}
-
-		void ShowData()
-		{
-			WriteChatf("ShowData :: RawQuery                [%s]", RawQuery.c_str());
-			WriteChatf("ShowData :: ID                      [%i]", ID);
-			WriteChatf("ShowData :: Name                    [%s]", Name.c_str());
-			WriteChatf("ShowData :: PartialName             [%s]", PartialName.c_str());
-			WriteChatf("ShowData :: Class                   [%s]", Class.c_str());
-			WriteChatf("ShowData :: MinLevel                [%i]", MinLevel);
-			WriteChatf("ShowData :: MaxLevel                [%i]", MaxLevel);
-			WriteChatf("ShowData :: Category                [%s]", Category.c_str());
-			WriteChatf("ShowData :: nCategory               [%i]", nCategory);
-			WriteChatf("ShowData :: SubCategory             [%s]", SubCategory.c_str());
-			WriteChatf("ShowData :: nSubCategory            [%i]", nSubCategory);
-			WriteChatf("ShowData :: SubCategory2            [%s]", SubCategory2.c_str());
-			WriteChatf("ShowData :: nSubCategory2           [%i]", nSubCategory2);
-			WriteChatf("ShowData :: SpellClass              [%i]", SpellClass);
-			WriteChatf("ShowData :: SpellSubClass           [%i]", SpellSubClass);
-			WriteChatf("ShowData :: Timer                   [%i]", Timer);
-			WriteChatf("ShowData :: SpellRecordGiven        [%d]", SpellRecordGiven);
-			WriteChatf("ShowData :: IgnoreClass             [%d]", IgnoreClass);
-			WriteChatf("ShowData :: ShowAll                 [%d]", ShowAll);
-			WriteChatf("ShowData :: Reflectable             [%i]", Reflectable);
-			WriteChatf("ShowData :: Feedbackable            [%i]", Feedbackable);
-			WriteChatf("ShowData :: Range                   [%4.2f]", Range);
-			WriteChatf("ShowData :: AERange                 [%4.2f]", AERange);
-			WriteChatf("ShowData :: SpreadRadius            [%i]", SpreadRadius);
-			WriteChatf("ShowData :: Pushback                [%4.2f]", Pushback);
-			WriteChatf("ShowData :: HateGenerated           [%i]", HateGenerated);
-			WriteChatf("ShowData :: TargetType              [%i]", TargetType);
-			WriteChatf("ShowData :: NumEffectsMin           [%i]", NumEffectsMin);
-			WriteChatf("ShowData :: NumEffectsMax           [%i]", NumEffectsMax);
-			WriteChatf("ShowData :: Reflectable             [%i]", Reflectable);
-			WriteChatf("ShowData :: Skill                   [%i]", Skill);
-			WriteChatf("ShowData :: MaxTargetsMin           [%i]", MaxTargetsMin);
-			WriteChatf("ShowData :: MaxTargetsMax           [%i]", MaxTargetsMax);
-			WriteChatf("ShowData :: ResistType              [%i]", ResistType);
-			WriteChatf("ShowData :: SpellEffect             [%s]", SpellEffect.c_str());
-			WriteChatf("ShowData :: bSpellEffectMod         [%d]", bSpellEffectMod);
-			WriteChatf("ShowData :: SPA                     [%s]", SPA.c_str());
-			WriteChatf("ShowData :: nSPA                    [%i]", nSPA);
-			WriteChatf("ShowData :: bSPAMod                 [%i]", bSPAMod);
-		}
-
-		void ShowView()
-		{
-			WriteChatf("ShowView :: CanScribe               [%i]", CanScribe);
-			WriteChatf("ShowView :: ShowSpellEffects        [%i]", ShowSpellEffects);
-			WriteChatf("ShowView :: ShowMissingSpellsOnly   [%i]", ShowMissingSpellsOnly);
-			WriteChatf("ShowView :: ShowReverse             [%i]", ShowReverse);
-			WriteChatf("ShowView :: ShowFirstRecord         [%i]", ShowFirstRecord);
-			WriteChatf("ShowView :: ShowLastRecord          [%i]", ShowLastRecord);
-			WriteChatf("ShowView :: ShowDetailedOutput      [%i]", ShowDetailedOutput);
-			WriteChatf("ShowView :: VectorRecord            [%i]", VectorRecord);
-			WriteChatf("ShowView :: IgnoreRank              [%i]", IgnoreRank);
-			WriteChatf("ShowView :: TriggerIndex            [%i]", TriggerIndex);
-			WriteChatf("ShowView :: Debug                   [%i]", Debug);
-		}
-
-		void Clear()
-		{
-			RawQuery				= "";
-
-			ID						= -1;
-			Name					= "";
-			PartialName				= "";
-			Class					= "";
-			MinLevel				= 1;
-			MaxLevel				= 1;
-			Category				= "";
-			nCategory				= -1;
-			SubCategory				= "";
-			nSubCategory			= -1;
-			SubCategory2			= "";
-			nSubCategory2			= -1;
-			SpellClass				= -1;
-			SpellSubClass			= -1;
-
-			Timer					= -1;
-			SpellRecordGiven		= defSpellRecordGiven;
-			IgnoreClass				= defIgnoreClass;
-			ShowAll					= defShowAll;
-
-			Reflectable				= -1;
-			Feedbackable			= -1;
-			Range					= -1;
-			AERange					= -1;
-			SpreadRadius			= -1;
-			Pushback				= -1;
-			HateGenerated			= -1;
-			TargetType				= -1;
-			NumEffectsMin			= -1;
-			NumEffectsMax			= -1;
-			Skill					= -1;
-			SpellEffect				= "";
-			bSpellEffectMod			= true;
-			MaxTargetsMin			= -1;
-			MaxTargetsMax			= -1;
-			ResistType				= -1;
-
-			SPA						= "";
-			nSPA					= -1;
-			bSPAMod					= true;
-
-			CanScribe				= defCanScribe;
-			ShowSpellEffects		= defShowSpellEffects;
-			ShowMissingSpellsOnly	= defShowMissingSpellsOnly;
-			ShowReverse				= defShowReverse;
-			ShowFirstRecord			= defShowFirstRecord;
-			ShowLastRecord			= defShowLastRecord;
-			ShowDetailedOutput		= defShowDetailedOutput;
-			VectorRecord			= defVectorRecord;
-			IgnoreRank				= defIgnoreRank;
-			TriggerIndex			= -1;
-			Debug					= defDebug;
-		}
-};
-
 class MQ2SpellSearchType : public MQ2Type
 {
 public:
@@ -398,7 +34,6 @@ public:
 	char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellSearch& psSpellSearch);
 	int MQ2SpellSearchType::GetVectorRecordID(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList);
 	bool MQ2SpellSearchType::OutputFilter(SpellSearch& psSearchSpells, PSPELL& thisSpell);
-
 
 	/*
 		CMD
@@ -741,10 +376,33 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return GetNextArg(szRest, 1);
 		}
 
+		// Accept int or the acronym
 		if (!_stricmp(szArg, "TargetType") || !_stricmp(szArg, "-targettype"))
 		{
 			GetArg(szArg, szRest, 1);
+
 			psSpellSearch.TargetType = atoi(szArg);
+			if (psSpellSearch.TargetType == 0)
+			{
+				// This is ridiculous.
+				char tmpArg[MAX_STRING] = { 0 };
+				strcpy_s(tmpArg, sizeof(tmpArg), szArg);
+				_strupr_s(tmpArg);
+				std::string tmpStr = tmpArg;
+
+				auto getTargetType = m_TargetTypeAcronym.find(tmpStr);
+				if (getTargetType != m_TargetTypeAcronym.end())
+				{
+					
+					psSpellSearch.TargetType = getTargetType->second;
+				}
+				else
+				{
+					// Ignore it if wrong.
+					psSpellSearch.TargetType = -1;
+				}
+			}
+
 			return GetNextArg(szRest, 1);
 		}
 
@@ -1765,6 +1423,10 @@ void MQ2SpellSearchType::OutputResultsCMD(SpellSearch& psSearchSpells, std::vect
 		WriteChatf("DEBUG :: RecordID: %i szvMatchList: %i", RecordID, szvMatchList);
 	}
 
+	if (!psSearchSpells.ShowDetailedOutput) {
+		WriteChatf("\awID    \aoLVL \atTARGET     \agSPELL");
+	}
+
 	for (int x = RecordID - 1; x <= szvMatchList - 1; ++x)
 	{
 		thisSpell = vTempList.at(x);
@@ -1778,20 +1440,23 @@ void MQ2SpellSearchType::OutputResultConsole(SpellSearch& psSearchSpells, PSPELL
 {
 	pSpellSearch->spellsshown++;
 
-	std::string strNameColor = "\ag";
-	if (!KnowSpell(pthisSpell->ID)) strNameColor = "\ar";
+	std::string level = std::to_string(pthisSpell->ClassLevel[GetPcProfile()->Class]);
+	if (pthisSpell->ClassLevel[GetPcProfile()->Class] > 253) level = "";
+
+	std::string strNameColor = "\ag ";
+	if (!KnowSpell(pthisSpell->ID)) strNameColor = "\ar!";
 
 	if (psSearchSpells.ShowDetailedOutput)
 	{
 		WriteChatf("\at[\aw------------------------------------------------------------------------------\at]");
 		WriteChatf("\ayID: \a-y%i \ay[\a-y%s%s\ay] ClassLevel: \a-y%d \n\ayCategory: \a-y%i \aySubcategory: \a-y%i \aySubcategory2: \a-y%i \n\a-y%d \n\aySpellClass: \a-y%i \aySpellSubClass: \a-y%i",
-			pthisSpell->ID, strNameColor.c_str(), pthisSpell->Name, pthisSpell->ClassLevel[GetPcProfile()->Class],
-			pthisSpell->SpellClass, pthisSpell->SpellSubClass
+			pthisSpell->ID, strNameColor.c_str(), pthisSpell->Name, level, pthisSpell->SpellClass, pthisSpell->SpellSubClass
 		);
 	}
 	else
 	{
-		WriteChatf("\aw[ID: %*d] \ao[%*d] %s[%s]", 5, pthisSpell->ID, 3, pthisSpell->ClassLevel[GetPcProfile()->Class], strNameColor.c_str(), pthisSpell->Name);
+		
+		WriteChatf("\aw%*d \ao%*s \at%-*s %s%s", 5, pthisSpell->ID, 3, level.c_str(), 9, TargetTypeAcronym[pthisSpell->TargetType].c_str(), strNameColor.c_str(), pthisSpell->Name);
 	}
 
 	if (psSearchSpells.ShowSpellEffects || psSearchSpells.ShowDetailedOutput)
