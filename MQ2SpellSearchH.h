@@ -3,6 +3,7 @@
 	to avoid any potential naming conflict with the one in src/main.
 */
 
+class MQ2SpellSearchType;
 
 struct SpellSearch
 {
@@ -53,8 +54,6 @@ public:
 	int         nSubCategory = -1;
 	std::string SubCategory2 = "";
 	int			nSubCategory2 = -1;
-	int			SpellClass = -1;
-	int			SpellSubClass = -1;
 
 	int         Timer = -1;
 	bool		SpellRecordGiven = defSpellRecordGiven;
@@ -113,8 +112,6 @@ public:
 			Category == pOther.Category &&
 			SubCategory == pOther.SubCategory &&
 			SubCategory2 == pOther.SubCategory2 &&
-			SpellClass == pOther.SpellClass &&
-			SpellSubClass == pOther.SpellSubClass &&
 
 			Timer == pOther.Timer &&
 			SpellRecordGiven == pOther.SpellRecordGiven &&
@@ -157,8 +154,6 @@ public:
 			Category != pOther.Category ||
 			SubCategory != pOther.SubCategory ||
 			SubCategory2 != pOther.SubCategory2 ||
-			SpellClass != pOther.SpellClass ||
-			SpellSubClass != pOther.SpellSubClass ||
 
 			Timer != pOther.Timer ||
 			SpellRecordGiven != pOther.SpellRecordGiven ||
@@ -206,8 +201,6 @@ public:
 		nSubCategory = pOther.nSubCategory;
 		SubCategory2 = pOther.SubCategory2;
 		nSubCategory2 = pOther.nSubCategory2;
-		SpellClass = pOther.SpellClass;
-		SpellSubClass = pOther.SpellSubClass;
 
 		Timer = pOther.Timer;
 		SpellRecordGiven = pOther.SpellRecordGiven;
@@ -266,8 +259,6 @@ public:
 		WriteChatf("ShowData :: nSubCategory            [%i]", nSubCategory);
 		WriteChatf("ShowData :: SubCategory2            [%s]", SubCategory2.c_str());
 		WriteChatf("ShowData :: nSubCategory2           [%i]", nSubCategory2);
-		WriteChatf("ShowData :: SpellClass              [%i]", SpellClass);
-		WriteChatf("ShowData :: SpellSubClass           [%i]", SpellSubClass);
 		WriteChatf("ShowData :: Timer                   [%i]", Timer);
 		WriteChatf("ShowData :: SpellRecordGiven        [%d]", SpellRecordGiven);
 		WriteChatf("ShowData :: IgnoreClass             [%d]", IgnoreClass);
@@ -325,8 +316,6 @@ public:
 		nSubCategory = -1;
 		SubCategory2 = "";
 		nSubCategory2 = -1;
-		SpellClass = -1;
-		SpellSubClass = -1;
 
 		Timer = -1;
 		SpellRecordGiven = defSpellRecordGiven;
