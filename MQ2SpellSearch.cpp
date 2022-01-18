@@ -625,6 +625,62 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return GetNextArg(szRest, 1);
 		}
 
+		if (!_stricmp(szArg, "PushBack") || !_stricmp(szArg, "-pushback"))
+		{
+			GetArg(szArg, szRest, 1);
+			if (!_stricmp(szArg, "yes") || !_stricmp(szArg, "true") || !_stricmp(szArg, "1"))
+			{
+				psSpellSearch.PushBack = 1;
+			}
+			else if (!_stricmp(szArg, "no") || !_stricmp(szArg, "false") || !_stricmp(szArg, "0"))
+			{
+				psSpellSearch.PushBack = 0;
+			}
+			return GetNextArg(szRest, 1);
+		}
+
+		if (!_stricmp(szArg, "PushUp") || !_stricmp(szArg, "-pushup"))
+		{
+			GetArg(szArg, szRest, 1);
+			if (!_stricmp(szArg, "yes") || !_stricmp(szArg, "true") || !_stricmp(szArg, "1"))
+			{
+				psSpellSearch.PushUp = 1;
+			}
+			else if (!_stricmp(szArg, "no") || !_stricmp(szArg, "false") || !_stricmp(szArg, "0"))
+			{
+				psSpellSearch.PushUp = 0;
+			}
+			return GetNextArg(szRest, 1);
+		}
+
+		if (!_stricmp(szArg, "CastTimeMin") || !_stricmp(szArg, "-casttimemin"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.CastTimeMin = atoi(szArg);
+			return GetNextArg(szRest, 1);
+		}
+
+		if (!_stricmp(szArg, "CastTimeMax") || !_stricmp(szArg, "-casttimemax"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.CastTimeMax = atoi(szArg);
+			return GetNextArg(szRest, 1);
+		}
+
+		if (!_stricmp(szArg, "RecastTimeMin") || !_stricmp(szArg, "-recasttimemin"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.RecastTimeMin = atoi(szArg);
+			return GetNextArg(szRest, 1);
+		}
+
+		if (!_stricmp(szArg, "RecastTimeMax") || !_stricmp(szArg, "-recasttimemax"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.RecastTimeMax = atoi(szArg);
+			return GetNextArg(szRest, 1);
+		}
+
 		// If we get here, then we did not find a matching parameter. Let's assume its the spell unless
 		// it or partialname have been set. If they enclosed the name with quotes, then it will all be in
 		// szArg which will loop until done.
@@ -692,6 +748,20 @@ SpellSearch MQ2SpellSearchType::ParseSpellSearch(const char* Buffer)
 		// They negate, so turn them off. Otherwise the power grid will fail.
 		psSpellSearch.ShowFirstRecord = false;
 		psSpellSearch.ShowLastRecord = false;
+	}
+
+	if ((psSpellSearch.CastTimeMax > -1) && psSpellSearch.CastTimeMin > psSpellSearch.CastTimeMax)
+	{
+		int tmp = psSpellSearch.CastTimeMax;
+		psSpellSearch.CastTimeMax = psSpellSearch.CastTimeMin;
+		psSpellSearch.CastTimeMin = tmp;
+	}
+
+	if ((psSpellSearch.RecastTimeMax > -1) && psSpellSearch.RecastTimeMin > psSpellSearch.RecastTimeMax)
+	{
+		int tmp = psSpellSearch.RecastTimeMax;
+		psSpellSearch.RecastTimeMax = psSpellSearch.RecastTimeMin;
+		psSpellSearch.RecastTimeMin = tmp;
 	}
 
 	return psSpellSearch;
@@ -837,6 +907,10 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 	int iSrchSPA = 0;
 	int iSrchMaxTargets = 0;
 	int iSrchResistType = 0;
+	int iSrchPushBack = 0;
+	int iSrchPushUp = 0;
+	int iSrchCastTime = 0;
+	int iSrchRecastTime = 0;
 
 	int iSpells = sizeof(pSpellMgr->Spells);
 
@@ -867,6 +941,10 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 		iSrchSPA = 0;
 		iSrchMaxTargets = 0;
 		iSrchResistType = 0;
+		iSrchPushBack = 0;
+		iSrchPushUp = 0;
+		iSrchCastTime = 0;
+		iSrchRecastTime = 0;
 
 		thisSpell = pSpellMgr->GetSpellByID(x);
 		if (thisSpell == nullptr)
@@ -921,14 +999,13 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 			}
 			else if (psSearchSpells.NumEffectsMin > -1)
 			{
-				if ((int)thisSpell->NumEffects != psSearchSpells.NumEffectsMin) continue;
+				if ((int)thisSpell->NumEffects < psSearchSpells.NumEffectsMin) continue;
 			}
 			else if (psSearchSpells.NumEffectsMax > -1)
 			{
-				if ((int)thisSpell->NumEffects != psSearchSpells.NumEffectsMax) continue;
+				if ((int)thisSpell->NumEffects > psSearchSpells.NumEffectsMax) continue;
 			}
 		}
-
 
 		if (psSearchSpells.MaxTargetsMin != -1 || psSearchSpells.MaxTargetsMax != -1)
 		{
@@ -942,11 +1019,11 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 			}
 			else if (psSearchSpells.MaxTargetsMin > -1)
 			{
-				if ((int)thisSpell->MaxTargets != psSearchSpells.MaxTargetsMin) continue;
+				if ((int)thisSpell->MaxTargets < psSearchSpells.MaxTargetsMin) continue;
 			}
 			else if (psSearchSpells.MaxTargetsMax > -1)
 			{
-				if ((int)thisSpell->MaxTargets != psSearchSpells.MaxTargetsMax) continue;
+				if ((int)thisSpell->MaxTargets > psSearchSpells.MaxTargetsMax) continue;
 			}
 		}
 
@@ -983,6 +1060,60 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 			iSrchResistType = 1;
 			NumParams++;
 			if (thisSpell->Resist != psSearchSpells.ResistType) continue;
+		}
+
+		if (psSearchSpells.PushBack != -1)
+		{
+			iSrchPushBack = 1;
+			NumParams++;
+			if (thisSpell->PushBack == 0 && psSearchSpells.PushBack) continue;
+			if (thisSpell->PushBack != 0 && !psSearchSpells.PushBack) continue;
+		}
+
+		if (psSearchSpells.PushUp != -1)
+		{
+			iSrchPushUp = 1;
+			NumParams++;
+			if (thisSpell->PushUp == 0 && psSearchSpells.PushUp) continue;
+			if (thisSpell->PushUp != 0 && !psSearchSpells.PushUp) continue;
+		}
+
+		if (psSearchSpells.CastTimeMin != -1 || psSearchSpells.CastTimeMax != -1)
+		{
+			iSrchCastTime = 1;
+			NumParams++;
+
+			if (psSearchSpells.CastTimeMin > -1 && psSearchSpells.CastTimeMax > -1)
+			{
+				if ((int)thisSpell->CastTime < psSearchSpells.CastTimeMin || (int)thisSpell->CastTime > psSearchSpells.CastTimeMax) continue;
+			}
+			else if (psSearchSpells.CastTimeMin > -1)
+			{
+				if ((int)thisSpell->CastTime < psSearchSpells.CastTimeMin) continue;
+			}
+			else if (psSearchSpells.CastTimeMax > -1)
+			{
+				if ((int)thisSpell->CastTime > psSearchSpells.CastTimeMax) continue;
+			}
+		}
+
+		if (psSearchSpells.RecastTimeMin != -1 || psSearchSpells.RecastTimeMax != -1)
+		{
+			iSrchRecastTime = 1;
+			NumParams++;
+
+			if (psSearchSpells.RecastTimeMin > -1 && psSearchSpells.RecastTimeMax > -1)
+			{
+				if ((int)thisSpell->RecastTime < psSearchSpells.RecastTimeMin || (int)thisSpell->RecastTime > psSearchSpells.RecastTimeMax) continue;
+			}
+			else if (psSearchSpells.RecastTimeMin > -1)
+			{
+				if ((int)thisSpell->RecastTime < psSearchSpells.RecastTimeMin) continue;
+			}
+			else if (psSearchSpells.RecastTimeMax > -1)
+			{
+				if ((int)thisSpell->RecastTime > psSearchSpells.RecastTimeMax) continue;
+			}
 		}
 
 		// If we ignore class, then level is meaningless.
@@ -1105,7 +1236,11 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 							iSrchSpellEffect +
 							iSrchSPA +
 							iSrchMaxTargets +
-							iSrchResistType
+							iSrchResistType +
+							iSrchPushBack +
+							iSrchPushUp +
+							iSrchCastTime +
+							iSrchRecastTime
 						))
 		{
 			pvMatchList.push_back(thisSpell);
@@ -1287,7 +1422,7 @@ void MQ2SpellSearchType::SpellSearchCmd(PlayerClient* pChar, char* szLine)
 
 	if (!pSpellSearch->spellsshown)
 	{
-		WriteChatf("\aw[MQ2SpellSearch] \n\ayNo matches found");
+		WriteChatf("\n\aw[MQ2SpellSearch] \ayNo matches found");
 	}
 	else
 	{
@@ -1344,6 +1479,8 @@ void MQ2SpellSearchType::OutputResultsCMD(SpellSearch& psSearchSpells, std::vect
 		WriteChatf("DEBUG :: RecordID: %i szvMatchList: %i", RecordID, szvMatchList);
 	}
 
+	if (!szvMatchList) return;
+
 	if (!psSearchSpells.ShowDetailedOutput) {
 		WriteChatf("\n\awID    \aoLVL \atTARGET     \agSPELL");
 	}
@@ -1359,6 +1496,7 @@ void MQ2SpellSearchType::OutputResultsCMD(SpellSearch& psSearchSpells, std::vect
 
 		OutputResultConsole(psSearchSpells, thisSpell);
 	}
+	return;
 }
 
 void MQ2SpellSearchType::OutputResultConsole(SpellSearch& psSearchSpells, PSPELL& pthisSpell)
@@ -1368,15 +1506,16 @@ void MQ2SpellSearchType::OutputResultConsole(SpellSearch& psSearchSpells, PSPELL
 	std::string level = std::to_string(pthisSpell->ClassLevel[GetPcProfile()->Class]);
 	if (pthisSpell->ClassLevel[GetPcProfile()->Class] > 253) level = "";
 
-	std::string strNameColor = "\ag ";
-	if (!KnowSpell(pthisSpell->ID)) strNameColor = "\ar!";
-
 	if (psSearchSpells.ShowDetailedOutput)
 	{
-		WriteChatf("\ayID                     \aw:\ao %i \n\ayClassLevel             \aw:\ao %d \n\ayName                   \aw:\ao %s ",
-			pthisSpell->ID, 
-			pthisSpell->ClassLevel[GetPcProfile()->Class],
-			pthisSpell->Name
+		std::string strNameColor = "\ag";
+		if (!KnowSpell(pthisSpell->ID)) strNameColor = "\ar!";
+
+		WriteChatf("\ayID                     \aw:\ao %i \n\ayName                   \aw: %s%s \n\ayClassLevel             \aw:\ao %d",
+			pthisSpell->ID,
+			strNameColor.c_str(),
+			pthisSpell->Name,
+			pthisSpell->ClassLevel[GetPcProfile()->Class]
 		);
 		WriteChatf("\ayCategory               \aw:\ao %i \n\aySubcategory            \aw:\ao %i \n\aySubcategory2           \aw:\ao %i Unsure if useful", 
 			pthisSpell->Category,
@@ -1386,6 +1525,9 @@ void MQ2SpellSearchType::OutputResultConsole(SpellSearch& psSearchSpells, PSPELL
 	}
 	else
 	{
+		std::string strNameColor = "\ag ";
+		if (!KnowSpell(pthisSpell->ID)) strNameColor = "\ar!";
+
 		WriteChatf("\aw%*d \ao%*s \at%-*s %s%s", 5, pthisSpell->ID, 3, level.c_str(), 9, TargetTypeAcronym[pthisSpell->TargetType].c_str(), strNameColor.c_str(), pthisSpell->Name);
 	}
 

@@ -64,7 +64,8 @@ public:
 	float		Range = -1;
 	float		AERange = -1;
 	int			SpreadRadius = -1;
-	float		Pushback = -1;
+	int			PushBack = -1;
+	int			PushUp = -1;
 	int			HateGenerated = -1;
 	int			TargetType = -1;
 	int			NumEffectsMin = -1;
@@ -73,6 +74,10 @@ public:
 	int			MaxTargetsMin = -1;
 	int			MaxTargetsMax = -1;
 	int			ResistType = -1;
+	int			CastTimeMin = -1;
+	int			CastTimeMax = -1;
+	int			RecastTimeMin = -1;
+	int			RecastTimeMax = -1;
 
 	// Use to search through spelleffects for keyword or phrase.
 	std::string SpellEffect = "";
@@ -123,7 +128,8 @@ public:
 			Range == pOther.Range &&
 			AERange == pOther.AERange &&
 			SpreadRadius == pOther.SpreadRadius &&
-			Pushback == pOther.Pushback &&
+			PushBack == pOther.PushBack &&
+			PushUp == pOther.PushUp &&
 			HateGenerated == pOther.HateGenerated &&
 			TargetType == pOther.TargetType &&
 			NumEffectsMin == pOther.NumEffectsMin &&
@@ -132,6 +138,10 @@ public:
 			MaxTargetsMin == pOther.MaxTargetsMin &&
 			MaxTargetsMax == pOther.MaxTargetsMax &&
 			ResistType == pOther.ResistType &&
+			CastTimeMin == pOther.CastTimeMin &&
+			CastTimeMax == pOther.CastTimeMax &&
+			RecastTimeMin == pOther.RecastTimeMin &&
+			RecastTimeMax == pOther.RecastTimeMax &&
 			SpellEffect == pOther.SpellEffect &&
 			bSpellEffectMod == pOther.bSpellEffectMod &&
 			SPA == pOther.SPA &&
@@ -165,7 +175,8 @@ public:
 			Range != pOther.Range ||
 			AERange != pOther.AERange ||
 			SpreadRadius != pOther.SpreadRadius ||
-			Pushback != pOther.Pushback ||
+			PushBack != pOther.PushBack ||
+			PushUp != pOther.PushUp ||
 			HateGenerated != pOther.HateGenerated ||
 			TargetType != pOther.TargetType ||
 			NumEffectsMin != pOther.NumEffectsMin ||
@@ -174,6 +185,11 @@ public:
 			MaxTargetsMin != pOther.MaxTargetsMin ||
 			MaxTargetsMax != pOther.MaxTargetsMax ||
 			ResistType != pOther.ResistType ||
+			CastTimeMin != pOther.CastTimeMin ||
+			CastTimeMax != pOther.CastTimeMax ||
+			RecastTimeMin != pOther.RecastTimeMin ||
+			RecastTimeMax != pOther.RecastTimeMax ||
+
 			SpellEffect != pOther.SpellEffect ||
 			bSpellEffectMod != pOther.bSpellEffectMod ||
 			SPA != pOther.SPA ||
@@ -212,7 +228,8 @@ public:
 		Range = pOther.Range;
 		AERange = pOther.AERange;
 		SpreadRadius = pOther.SpreadRadius;
-		Pushback = pOther.Pushback;
+		PushBack = pOther.PushBack;
+		PushUp = pOther.PushUp;
 		HateGenerated = pOther.HateGenerated;
 		TargetType = pOther.TargetType;
 		NumEffectsMin = pOther.NumEffectsMin;
@@ -221,6 +238,11 @@ public:
 		MaxTargetsMin = pOther.MaxTargetsMin;
 		MaxTargetsMax = pOther.MaxTargetsMax;
 		ResistType = pOther.ResistType;
+		CastTimeMin = pOther.CastTimeMin;
+		CastTimeMax = pOther.CastTimeMax;
+		RecastTimeMin = pOther.RecastTimeMin;
+		RecastTimeMax = pOther.RecastTimeMax;
+
 		SpellEffect = pOther.SpellEffect;
 		bSpellEffectMod = pOther.bSpellEffectMod;
 		SPA = pOther.SPA;
@@ -268,7 +290,8 @@ public:
 		WriteChatf("ShowData :: Range                   [%4.2f]", Range);
 		WriteChatf("ShowData :: AERange                 [%4.2f]", AERange);
 		WriteChatf("ShowData :: SpreadRadius            [%i]", SpreadRadius);
-		WriteChatf("ShowData :: Pushback                [%4.2f]", Pushback);
+		WriteChatf("ShowData :: PushBack                [%i]", PushBack);
+		WriteChatf("ShowData :: PushUp                  [%i]", PushBack);
 		WriteChatf("ShowData :: HateGenerated           [%i]", HateGenerated);
 		WriteChatf("ShowData :: TargetType              [%i]", TargetType);
 		WriteChatf("ShowData :: NumEffectsMin           [%i]", NumEffectsMin);
@@ -327,7 +350,8 @@ public:
 		Range = -1;
 		AERange = -1;
 		SpreadRadius = -1;
-		Pushback = -1;
+		PushBack = -1;
+		PushUp = -1;
 		HateGenerated = -1;
 		TargetType = -1;
 		NumEffectsMin = -1;
@@ -338,6 +362,10 @@ public:
 		MaxTargetsMin = -1;
 		MaxTargetsMax = -1;
 		ResistType = -1;
+		CastTimeMin = -1;
+		CastTimeMax = -1;
+		RecastTimeMin = -1;
+		RecastTimeMax = -1;
 
 		SPA = "";
 		nSPA = -1;
@@ -361,8 +389,8 @@ std::string TargetTypeAcronym[] =
 {
 	"NONE",      //TargetType_None = 0,
 	"LOS",       //TargetType_LineOfSight = 1,
-	"AEPC",      //TargetType_AEPC_v1 = 2,                 // players in area around caster
-	"GROUP",     //TargetType_Group_v1 = 3,                // group members around caster
+	"AEPCINRNG", //TargetType_AEPC_v1 = 2,                 // players in area around caster
+	"GROUPNEAR", //TargetType_Group_v1 = 3,                // group members around caster
 	"PBAE",      //TargetType_PBAE = 4,                    // area around caster
 	"SINGLE",    //TargetType_Single = 5,                  // current target
 	"SELF",      //TargetType_Self = 6,                    // targets self only
@@ -373,7 +401,7 @@ std::string TargetTypeAcronym[] =
 	"SUMMONED",  //TargetType_TargetSummoned = 11,
 	"UNKN12",
 	"DRAIN",     //TargetType_TargetDrain = 13,
-	"PETSELF",   //TargetType_Pet = 14,                    // caster's pet
+	"MYPET",     //TargetType_Pet = 14,                    // caster's pet
 	"CORPSE",    //TargetType_TargetCorpse = 15,
 	"PLANT",     //TargetType_TargetPlant = 16,
 	"GIANT",     //TargetType_TargetGiants = 17,
@@ -395,12 +423,12 @@ std::string TargetTypeAcronym[] =
 	"HATEOOR",   //TargetType_HateList_All = 33,           // all players on hatelist regardless of range
 	"CURSED",    //TargetType_TargetCursed = 34,
 	"MURAMITE",  //TargetType_TargetMuramite = 35,
-	"AEPC",      //TargetType_CasterAreaPC = 36,
+	"AEPCv2",    //TargetType_CasterAreaPC = 36,
 	"AENPC",     //TargetType_CasterAreaNPC = 37,
-	"PETOTHER",  //TargetType_Pet_v2 = 38,                 // targeted pet
+	"PET",       //TargetType_Pet_v2 = 38,                 // targeted pet
 	"PC",        //TargetType_TargetPC = 39,               // targeted player
-	"AEBENEFIT", //TargetType_AEPC_v2 = 40,                // area beneficial players
-	"AEGROUP",   //TargetType_Group_v2 = 41,               // area grouped players
+	"AEPCBNFIT", //TargetType_AEPC_v2 = 40,                // area beneficial players
+	"GROUP",     //TargetType_Group_v2 = 41,               // area grouped players
 	"CONE",      //TargetType_DirectionalCone = 42,        // projected cone in front of player
 	"GROUPEDPC", //TargetType_SingleGrouped = 43,          // single target grouped
 	"BEAM",      //TargetType_Beam = 44,
@@ -418,8 +446,8 @@ std::unordered_map<std::string, int> m_TargetTypeAcronym =
 {
 	{"NONE",		0},  //TargetType_None = 0,
 	{"LOS",			1},  //TargetType_LineOfSight = 1,
-	{"AEPC",		2},  //TargetType_AEPC_v1 = 2,                 // players in area around caster
-	{"GROUP",		3},  //TargetType_Group_v1 = 3,                // group members around caster
+	{"AEPCINRNG",	2},  //TargetType_AEPC_v1 = 2,                 // players in area around caster
+	{"GROUPNEAR",	3},  //TargetType_Group_v1 = 3,                // group members around caster
 	{"PBAE",		4},  //TargetType_PBAE = 4,                    // area around caster
 	{"SINGLE",		5},  //TargetType_Single = 5,                  // current target
 	{"SELF",		6},  //TargetType_Self = 6,                    // targets self only
@@ -430,7 +458,7 @@ std::unordered_map<std::string, int> m_TargetTypeAcronym =
 	{"SUMMONED",	11}, //TargetType_TargetSummoned = 11,
 	{"UNKN12",		12},
 	{"DRAIN",		13}, //TargetType_TargetDrain = 13,
-	{"PETSELF",		14}, //TargetType_Pet = 14,                    // caster's pet
+	{"MYPET",		14}, //TargetType_Pet = 14,                    // caster's pet
 	{"CORPSE",		15}, //TargetType_TargetCorpse = 15,
 	{"PLANT",		16}, //TargetType_TargetPlant = 16,
 	{"GIANT",		17}, //TargetType_TargetGiants = 17,
@@ -454,10 +482,10 @@ std::unordered_map<std::string, int> m_TargetTypeAcronym =
 	{"MURAMITE",	35}, //TargetType_TargetMuramite = 35,
 	{"AEPC",		36}, //TargetType_CasterAreaPC = 36,
 	{"AENPC",		37}, //TargetType_CasterAreaNPC = 37,
-	{"PETOTHER",	38}, //TargetType_Pet_v2 = 38,                 // targeted pet
+	{"PET",			38}, //TargetType_Pet_v2 = 38,                 // targeted pet
 	{"PC",			39}, //TargetType_TargetPC = 39,               // targeted player
 	{"AEBENEFIT",	40}, //TargetType_AEPC_v2 = 40,                // area beneficial players
-	{"AEGROUP",		41}, //TargetType_Group_v2 = 41,               // area grouped players
+	{"GROUPv2",		41}, //TargetType_Group_v2 = 41,               // area grouped players
 	{"CONE",		42}, //TargetType_DirectionalCone = 42,        // projected cone in front of player
 	{"GROUPEDPC",	43}, //TargetType_SingleGrouped = 43,          // single target grouped
 	{"BEAM",		44}, //TargetType_Beam = 44,
