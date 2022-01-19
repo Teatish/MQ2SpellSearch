@@ -681,6 +681,13 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return GetNextArg(szRest, 1);
 		}
 
+		if (!_stricmp(szArg, "Extra") || !_stricmp(szArg, "-extra"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.Extra = szArg;
+			return GetNextArg(szRest, 1);
+		}
+
 		// If we get here, then we did not find a matching parameter. Let's assume its the spell unless
 		// it or partialname have been set. If they enclosed the name with quotes, then it will all be in
 		// szArg which will loop until done.
@@ -911,6 +918,7 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 	int iSrchPushUp = 0;
 	int iSrchCastTime = 0;
 	int iSrchRecastTime = 0;
+	int iSrchExtra = 0;
 
 	int iSpells = sizeof(pSpellMgr->Spells);
 
@@ -945,6 +953,7 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 		iSrchPushUp = 0;
 		iSrchCastTime = 0;
 		iSrchRecastTime = 0;
+		iSrchExtra = 0;
 
 		thisSpell = pSpellMgr->GetSpellByID(x);
 		if (thisSpell == nullptr)
@@ -1217,6 +1226,14 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 			if (iPosition < 0) continue;
 		}
 
+		if (!string_equals(psSearchSpells.Extra, ""))
+		{
+			NumParams++;
+			iSrchExtra = 1;
+			int iPosition = ci_find_substr(thisSpell->Extra, psSearchSpells.Extra);
+			if (iPosition < 0) continue;
+		}
+
 		//bool IsSPAEffect(EQ_Spell* pSpell, int EffectID)
 		//int GetSpellAttrib(EQ_Spell* pSpell, int index)
 		// 
@@ -1240,7 +1257,8 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 							iSrchPushBack +
 							iSrchPushUp +
 							iSrchCastTime +
-							iSrchRecastTime
+							iSrchRecastTime +
+							iSrchExtra
 						))
 		{
 			pvMatchList.push_back(thisSpell);
@@ -1482,7 +1500,7 @@ void MQ2SpellSearchType::OutputResultsCMD(SpellSearch& psSearchSpells, std::vect
 	if (!szvMatchList) return;
 
 	if (!psSearchSpells.ShowDetailedOutput) {
-		WriteChatf("\n\awID    \aoLVL \atTARGET     \agSPELL");
+		WriteChatf("\n\awID    \aoLVL \atTARGET     \agSPELL                                \ayCATEGORIES");
 	}
 	else
 	{
@@ -1517,10 +1535,10 @@ void MQ2SpellSearchType::OutputResultConsole(SpellSearch& psSearchSpells, PSPELL
 			pthisSpell->Name,
 			pthisSpell->ClassLevel[GetPcProfile()->Class]
 		);
-		WriteChatf("\ayCategory               \aw:\ao %i \n\aySubcategory            \aw:\ao %i \n\aySubcategory2           \aw:\ao %i Unsure if useful", 
-			pthisSpell->Category,
-			pthisSpell->Subcategory,
-			pthisSpell->Subcategory2
+		WriteChatf("\ayCategory               \aw:\ao %-*i \aw:\ao \ag%s\ax \n\aySubcategory            \aw:\ao %-*i \aw:\ao \ag%s\ax \n\aySubcategory2           \aw:\ao %-*i \aw:\ao Unsure if useful", 
+			3, pthisSpell->Category, CategoryNameLookup[pthisSpell->Category].c_str(),
+			3, pthisSpell->Subcategory, CategoryNameLookup[pthisSpell->Subcategory].c_str(),
+			3, pthisSpell->Subcategory2
 		);
 	}
 	else
@@ -1528,7 +1546,7 @@ void MQ2SpellSearchType::OutputResultConsole(SpellSearch& psSearchSpells, PSPELL
 		std::string strNameColor = "\ag ";
 		if (!KnowSpell(pthisSpell->ID)) strNameColor = "\ar!";
 
-		WriteChatf("\aw%*d \ao%*s \at%-*s %s%s", 5, pthisSpell->ID, 3, level.c_str(), 9, TargetTypeAcronym[pthisSpell->TargetType].c_str(), strNameColor.c_str(), pthisSpell->Name);
+		WriteChatf("\aw%*d \ao%*s \at%-*s %s%-*s \ay%s -> %s", 5, pthisSpell->ID, 3, level.c_str(), 9, TargetTypeAcronym[pthisSpell->TargetType].c_str(), strNameColor.c_str(), 36, pthisSpell->Name, CategoryNameLookup[pthisSpell->Category].c_str(), CategoryNameLookup[pthisSpell->Subcategory].c_str());
 	}
 
 	if (psSearchSpells.ShowSpellEffects || psSearchSpells.ShowDetailedOutput)
@@ -1766,9 +1784,9 @@ void MQ2SpellSearchType::DumpPSpellMembers(PSPELL& pSpell)
 		pSpell->StacksWithSelf
 	);
 
-	WriteChatf("\ayTargetAnim             \aw:\ao %u \n\ayTargetType             \aw:\ao %u \n\ayTimeOfDay              \aw:\ao %u",
+	WriteChatf("\ayTargetAnim             \aw:\ao %u \n\ayTargetType             \aw:\ao %u \aw:\ao %s \n\ayTimeOfDay              \aw:\ao %u",
 		pSpell->TargetAnim,
-		pSpell->TargetType,
+		pSpell->TargetType, TargetTypeAcronym[pSpell->TargetType].c_str(),
 		pSpell->TimeOfDay
 	);
 
@@ -1895,6 +1913,8 @@ bool MQ2SpellSearchType::GetSpellSearchState(std::string_view query)
 
 		if (ci_find_substr(tmpStr, "Spell: ") == -1) return false;
 
+		// Can be 2 of these in there...
+		tmpStr.remove_prefix(ci_find_substr(tmpStr, "Spell: ")+7);
 		tmpStr.remove_prefix(ci_find_substr(tmpStr, "Spell: ") + 7);
 
 		int closingposition = ci_find_substr(tmpStr, ")");

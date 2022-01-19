@@ -89,6 +89,9 @@ public:
 	int			nSPA = -1;
 	// Assumes a match is wanted. False means not found anywhere.
 	bool		bSPAMod = true;
+	
+	// Partial match in the Extra field for procs, etc
+	std::string Extra = "";
 
 	// Configuration settings - filters
 	bool CanScribe = defCanScribe;
@@ -145,7 +148,8 @@ public:
 			SpellEffect == pOther.SpellEffect &&
 			bSpellEffectMod == pOther.bSpellEffectMod &&
 			SPA == pOther.SPA &&
-			bSPAMod == pOther.bSPAMod
+			bSPAMod == pOther.bSPAMod &&
+			Extra == pOther.Extra
 			)
 			return true;
 		return false;
@@ -193,7 +197,8 @@ public:
 			SpellEffect != pOther.SpellEffect ||
 			bSpellEffectMod != pOther.bSpellEffectMod ||
 			SPA != pOther.SPA ||
-			bSPAMod != pOther.bSPAMod
+			bSPAMod != pOther.bSPAMod ||
+			Extra != pOther.Extra
 			)
 			return true;
 		return false;
@@ -248,6 +253,7 @@ public:
 		SPA = pOther.SPA;
 		nSPA = pOther.nSPA;
 		bSPAMod = pOther.bSPAMod;
+		Extra = pOther.Extra;
 	}
 
 	void CacheView(const SpellSearch& pOther)
@@ -306,6 +312,7 @@ public:
 		WriteChatf("ShowData :: SPA                     [%s]", SPA.c_str());
 		WriteChatf("ShowData :: nSPA                    [%i]", nSPA);
 		WriteChatf("ShowData :: bSPAMod                 [%i]", bSPAMod);
+		WriteChatf("ShowData :: Extra                   [%i]", Extra);
 	}
 
 	void ShowView()
@@ -370,6 +377,7 @@ public:
 		SPA = "";
 		nSPA = -1;
 		bSPAMod = true;
+		Extra = "";
 
 		CanScribe = defCanScribe;
 		ShowSpellEffects = defShowSpellEffects;
@@ -485,7 +493,7 @@ std::unordered_map<std::string, int> m_TargetTypeAcronym =
 	{"PET",			38}, //TargetType_Pet_v2 = 38,                 // targeted pet
 	{"PC",			39}, //TargetType_TargetPC = 39,               // targeted player
 	{"AEBENEFIT",	40}, //TargetType_AEPC_v2 = 40,                // area beneficial players
-	{"GROUPv2",		41}, //TargetType_Group_v2 = 41,               // area grouped players
+	{"GROUP",		41}, //TargetType_Group_v2 = 41,               // area grouped players
 	{"CONE",		42}, //TargetType_DirectionalCone = 42,        // projected cone in front of player
 	{"GROUPEDPC",	43}, //TargetType_SingleGrouped = 43,          // single target grouped
 	{"BEAM",		44}, //TargetType_Beam = 44,
@@ -1338,6 +1346,187 @@ void NothingButAList(PSPELL pSpell) {
 	pSpell->ZoneType;
 }
 */
+
+std::string CategoryNameLookup[] =
+{
+	"None"                , // 0
+	"Aegolism"            , // 1
+	"Agility"             , // 2
+	"Alliance"            , // 3
+	"Animal"              , // 4
+	"Antonica"            , // 5
+	"Armor Class"         , // 6
+	"Attack"              , // 7
+	"Bane"                , // 8
+	"Blind"               , // 9
+	"Block"               , // 10
+	"Calm"                , // 11
+	"Charisma"            , // 12
+	"Charm"               , // 13
+	"Cold"                , // 14
+	"Combat Abilities"    , // 15
+	"Combat Innates"      , // 16
+	"Conversions"         , // 17
+	"Create Item"         , // 18
+	"Cure"                , // 19
+	"Damage Over Time"    , // 20
+	"Damage Shield"       , // 21
+	"Defensive"           , // 22
+	"Destroy"             , // 23
+	"Dexterity"           , // 24
+	"Direct Damage"       , // 25
+	"Disarm Traps"        , // 26
+	"Disciplines"         , // 27
+	"Discord"             , // 28
+	"Disease"             , // 29
+	"Disempowering"       , // 30
+	"Dispel"              , // 31
+	"Duration Heals"      , // 32
+	"Duration Tap"        , // 33
+	"Enchant Metal"       , // 34
+	"Enthrall"            , // 35
+	"Faydwer"             , // 36
+	"Fear"                , // 37
+	"Fire"                , // 38
+	"Fizzle Rate"         , // 39
+	"Fumble"              , // 40
+	"Haste"               , // 41
+	"Heals"               , // 42
+	"Health"              , // 43
+	"Health/Mana"         , // 44
+	"HP Buffs"            , // 45
+	"HP type one"         , // 46
+	"HP type two"         , // 47
+	"Illusion: Other"     , // 48
+	"Illusion: Adventurer", // 49
+	"Imbue Gem"           , // 50
+	"Invisibility"        , // 51
+	"Invulnerability"     , // 52
+	"Jolt"                , // 53
+	"Kunark"              , // 54
+	"Levitate"            , // 55
+	"Life Flow"           , // 56
+	"Luclin"              , // 57
+	"Magic"               , // 58
+	"Mana"                , // 59
+	"Mana Drain"          , // 60
+	"Mana Flow"           , // 61
+	"Melee Guard"         , // 62
+	"Memory Blur"         , // 63
+	"Misc"                , // 64
+	"Movement"            , // 65
+	"Objects"             , // 66
+	"Odus"                , // 67
+	"Offensive"           , // 68
+	"Pet"                 , // 69
+	"Pet Haste"           , // 70
+	"Pet Misc Buffs"      , // 0
+	"Physical"            , // 0
+	"Picklock"            , // 0
+	"Plant"               , // 0
+	"Poison"              , // 0
+	"Power Tap"           , // 0
+	"Quick Heal"          , // 0
+	"Reflection"          , // 0
+	"Regen"               , // 0
+	"Resist Buff"         , // 0
+	"Resist Debuffs"      , // 0
+	"Resurrection"        , // 0
+	"Root"                , // 0
+	"Rune"                , // 0
+	"Sense Trap"          , // 0
+	"Shadowstep"          , // 0
+	"Shielding"           , // 0
+	"Slow"                , // 0
+	"Snare"               , // 0
+	"Special"             , // 0
+	"Spell Focus"         , // 0
+	"Spell Guard"         , // 0
+	"Spellshield"         , // 0
+	"Stamina"             , // 0
+	"Statistic Buffs"     , // 0
+	"Strength"            , // 0
+	"Stun"                , // 0
+	"Sum: Air"            , // 0
+	"Sum: Animation"      , // 0
+	"Sum: Earth"          , // 0
+	"Sum: Familiar"       , // 0
+	"Sum: Fire"           , // 0
+	"Sum: Undead"         , // 0
+	"Sum: Warder"         , // 0
+	"Sum: Water"          , // 0
+	"Summon Armor"        , // 0
+	"Summon Focus"        , // 0
+	"Summon Food/Water"   , // 0
+	"Summon Utility"      , // 0
+	"Summon Weapon"       , // 0
+	"Summoned"            , // 0
+	"Symbol"              , // 0
+	"Taelosia"            , // 0
+	"Taps"                , // 0
+	"Techniques"          , // 0
+	"The Planes"          , // 0
+	"Timer 1"             , // 0
+	"Timer 2"             , // 0
+	"Timer 3"             , // 0
+	"Timer 4"             , // 0
+	"Timer 5"             , // 0
+	"Timer 6"             , // 0
+	"Transport"           , // 0
+	"Undead"              , // 0
+	"Utility Beneficial"  , // 0
+	"Utility Detrimental" , // 0
+	"Velious"             , // 0
+	"Visages"             , // 0
+	"Vision"              , // 0
+	"Wisdom/Intelligence" , // 0
+	"Traps"               , // 0
+	"Auras"               , // 0
+	"Endurance"           , // 0
+	"Serpent's Spine"     , // 0
+	"Corruption"          , // 0
+	"Learning"            , // 0
+	"Chromatic"           , // 0
+	"Prismatic"           , // 0
+	"Sum: Swarm"          , // 0
+	"Delayed"             , // 0
+	"Temporary"           , // 0
+	"Twincast"            , // 0
+	"Sum: Bodyguard"      , // 0
+	"Humanoid"            , // 0
+	"Haste/Spell Focus"   , // 0
+	"Timer 7"             , // 0
+	"Timer 8"             , // 0
+	"Timer 9"             , // 0
+	"Timer 10"            , // 0
+	"Timer 11"            , // 0
+	"Timer 12"            , // 0
+	"Hatred"              , // 0
+	"Fast"                , // 0
+	"Illusion: Special"   , // 0
+	"Timer 13"            , // 0
+	"Timer 14"            , // 0
+	"Timer 15"            , // 0
+	"Timer 16"            , // 0
+	"Timer 17"            , // 0
+	"Timer 18"            , // 0
+	"Timer 19"            , // 0
+	"Timer 20"            , // 0
+	"Alaris"              , // 0
+	"Combination"         , // 0
+	"Independent"         , // 0
+	"Skill Attacks"       , // 0
+	"Incoming"            , // 0
+	"Curse"               , // 0
+	"Timer 21"            , // 0
+	"Timer 22"            , // 0
+	"Timer 23"            , // 0
+	"Timer 24"            , // 0
+	"Timer 25"            , // 0
+	"Drunkenness"         , // 0
+	"Throwing"            , // 0
+	"Melee Damage"        , // 0
+};
 
 /* Categories and Subcategories use this list.
 
