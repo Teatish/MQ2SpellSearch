@@ -329,7 +329,7 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return GetNextArg(szRest, 1);
 		}
 
-		if (!_stricmp(szArg, "MinLevel") || !_stricmp(szArg, "-minlevel") || !_stricmp(szArg, "-minl"))
+		if (!_stricmp(szArg, "MinLevel") || !_stricmp(szArg, "-minlevel"))
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.MinLevel = atoi(szArg);
@@ -337,13 +337,30 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return GetNextArg(szRest, 1);
 		}
 
-		if (!_stricmp(szArg, "MaxLevel") || !_stricmp(szArg, "-maxlevel") || !_stricmp(szArg, "-maxl"))
+		if (!_stricmp(szArg, "MaxLevel") || !_stricmp(szArg, "-maxlevel"))
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.MaxLevel = atoi(szArg);
 			if (psSpellSearch.MaxLevel < psSpellSearch.MinLevel) psSpellSearch.MaxLevel = psSpellSearch.MinLevel;
 			return GetNextArg(szRest, 1);
 		}
+
+		if (!_stricmp(szArg, "MinRange") || !_stricmp(szArg, "-minrange"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.MinRange = atof(szArg);
+			if (psSpellSearch.MinRange < 1) psSpellSearch.MinRange = 1;
+			return GetNextArg(szRest, 1);
+		}
+
+		if (!_stricmp(szArg, "MaxRange") || !_stricmp(szArg, "-maxrange"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.MaxRange = atof(szArg);
+			if (psSpellSearch.MaxRange < psSpellSearch.MinRange) psSpellSearch.MaxRange = psSpellSearch.MinRange;
+			return GetNextArg(szRest, 1);
+		}
+
 
 		// Accept int or the acronym
 		if (!_stricmp(szArg, "TargetType") || !_stricmp(szArg, "-targettype"))
@@ -376,6 +393,15 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.Timer = atoi(szArg);
+			return GetNextArg(szRest, 1);
+		}
+
+		// Flag to restrict to alternate abilities, those spells which do not have a level or categories
+		if (!_stricmp(szArg, "AltAbility") || !_stricmp(szArg, "-altability") || !_stricmp(szArg, "-aa"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.AltAbility = szArg;
+			psSpellSearch.AltAbilityFilter = true;
 			return GetNextArg(szRest, 1);
 		}
 
@@ -771,6 +797,14 @@ SpellSearch MQ2SpellSearchType::ParseSpellSearch(const char* Buffer)
 		psSpellSearch.RecastTimeMin = tmp;
 	}
 
+	if (psSpellSearch.AltAbilityFilter)
+	{
+		psSpellSearch.Category = "NONE";
+		psSpellSearch.SubCategory = "NONE";
+		psSpellSearch.IgnoreClass = true;
+		psSpellSearch.PartialName = psSpellSearch.AltAbility;
+	}
+
 	return psSpellSearch;
 }
 
@@ -827,15 +861,11 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 	if (!string_equals(psSearchSpells.Category, ""))
 	{
 		trim(psSearchSpells.Category);
-		psSearchSpells.nCategory = atoi(psSearchSpells.Category.c_str());
-		SpellCat = psSearchSpells.nCategory;
 
-		if (!SpellCat)
-		{
-			SpellCat = (int)GetSpellCategoryFromName(psSearchSpells.Category.c_str());
-		}
+		SpellCat = (int)GetSpellCategoryFromName(psSearchSpells.Category.c_str());
+		psSearchSpells.nCategory = SpellCat;
 
-		if (!SpellCat)
+		if (SpellCat == -1)
 		{
 			if (isCMD)
 			{
@@ -849,15 +879,11 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 	if (!string_equals(psSearchSpells.SubCategory, ""))
 	{
 		trim(psSearchSpells.SubCategory);
-		psSearchSpells.nSubCategory = atoi(psSearchSpells.SubCategory.c_str());
-		SpellSubCat = psSearchSpells.nSubCategory;
 
-		if (!SpellSubCat)
-		{
-			SpellSubCat = (int)GetSpellCategoryFromName(psSearchSpells.SubCategory.c_str());
-		}
+		SpellSubCat = (int)GetSpellCategoryFromName(psSearchSpells.SubCategory.c_str());
+		psSearchSpells.nSubCategory = SpellSubCat;
 
-		if (!SpellSubCat)
+		if (SpellSubCat == -1)
 		{
 			if (isCMD)
 			{
@@ -904,6 +930,7 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 	int iSrchSubCat = 0;
 	int iSrchSubCat2 = 0;
 	int iSrchLevel = 0;
+	int iSrchRange = 0;
 	int iSrchPartialName = 0;
 	int iSrchFeedback = 0;
 	int iSrchReflectable = 0;
@@ -922,11 +949,11 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 
 	int iSpells = sizeof(pSpellMgr->Spells);
 
-	if ((psSearchSpells.IgnoreClass || psSearchSpells.PartialName.length() > 0) && (!SpellCat && (!SpellSubCat || !SpellSubCat2)))
+	if ((psSearchSpells.IgnoreClass || psSearchSpells.PartialName.length() > 0) && (SpellCat != -1 && (SpellSubCat != -1 || SpellSubCat2 != -1)))
 	{
 		if (isCMD)
 		{
-			WriteChatf("\aw[MQ2SpellSearch] \ayYour search time may be very.. long. Preferably, specify Category and SubCategory. Please wait.");
+			WriteChatf("\aw[MQ2SpellSearch] \ayYour search time may be long.");
 		}
 	}
 
@@ -939,6 +966,7 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 		iSrchSubCat = 0;
 		iSrchSubCat2 = 0;
 		iSrchLevel = 0;
+		iSrchRange = 0;
 		iSrchPartialName = 0;
 		iSrchFeedback = 0;
 		iSrchReflectable = 0;
@@ -1150,6 +1178,17 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 			}
 		}
 
+		// Evaluate the minimum and maximum range
+		if (psSearchSpells.MinRange > -1 || psSearchSpells.MaxRange > -1)
+		{
+			iSrchRange = 1;
+			NumParams++;
+			double MinRangeValue = psSearchSpells.MinRange > -1.0 ? psSearchSpells.MinRange : 0.0;
+			double MaxRangeValue = psSearchSpells.MaxRange > -1.0 ? psSearchSpells.MaxRange : 500.0;
+
+			if (thisSpell->Range < MinRangeValue || thisSpell->Range > MaxRangeValue) continue;
+		}
+
 		// Minimum length of a value of SPA_ is 4 chars
 		if (psSearchSpells.nSPA != -1 || psSearchSpells.SPA.length() > 4)
 		{
@@ -1245,6 +1284,7 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 							iSrchSubCat +
 							iSrchSubCat2 +
 							iSrchLevel +
+							iSrchRange +
 							iSrchSkill +
 							iSrchFeedback +
 							iSrchReflectable +
@@ -1305,6 +1345,20 @@ bool MQ2SpellSearchType::KnowSpell(int SpellID)
 	}
 	return false;
 }
+
+/*
+bool MQ2SpellSearchType::HasAltAbility(int AltAbilityID)
+{
+	PcProfile* pProfile = GetPcProfile();
+	if (!pProfile) return false;
+
+	for (int nAA : pProfile->AAList)
+	{
+		if (nAA == AltAbilityID) return true;
+	}
+	return false;
+}
+*/
 
 int MQ2SpellSearchType::GetVectorRecordID(SpellSearch& psSearchSpells, std::vector<PSPELL>& pvMatchList)
 {
@@ -1790,7 +1844,7 @@ void MQ2SpellSearchType::DumpPSpellMembers(PSPELL& pSpell)
 		pSpell->TimeOfDay
 	);
 
-	WriteChatf("\ayTravelType             \aw:\ao %u \n\ayUninterruptable        \aw:\ao %d \n\ayUnknown0x02C           \aw:\ao %6.4f \n\ayUsesPersistentParticles\aw:\ao %d \n\ayZoneType               \aw:\ao %u",
+	WriteChatf("\ayTravelType             \aw:\ao %u \n\ayUninterruptable        \aw:\ao %d \n\ayUnknown0x02C           \aw:\ao %6.4f \n\ayUsesPersistentParticles\aw:\ao %d \n\ayZoneType               \aw:\ao %u\n",
 		pSpell->TravelType,
 		pSpell->Uninterruptable,
 		pSpell->Unknown0x02C,
@@ -1911,11 +1965,11 @@ bool MQ2SpellSearchType::GetSpellSearchState(std::string_view query)
 
 		tmpStr = szBuff;
 
-		if (ci_find_substr(tmpStr, "Spell: ") == -1) return false;
-
 		// Can be 2 of these in there...
-		tmpStr.remove_prefix(ci_find_substr(tmpStr, "Spell: ")+7);
+		if (ci_find_substr(tmpStr, "Spell: ") == -1) return false;
 		tmpStr.remove_prefix(ci_find_substr(tmpStr, "Spell: ") + 7);
+		
+		if (ci_find_substr(tmpStr, "Spell: ") > -1) tmpStr.remove_prefix(ci_find_substr(tmpStr, "Spell: ") + 7);
 
 		int closingposition = ci_find_substr(tmpStr, ")");
 		if (closingposition != -1)
@@ -1924,20 +1978,16 @@ bool MQ2SpellSearchType::GetSpellSearchState(std::string_view query)
 			tmpStr.remove_suffix(suffixindice);
 		}
 
-		if (pSpellSearch->SearchSpells.IgnoreRank)
+		// Strip Rank
+		closingposition = find_substr(tmpStr, " Rk");
+		if (closingposition != -1)
 		{
-			const char* szTmp;
-			szTmp = &tmpStr[0];
-			char szTmp2[MAX_STRING] = { 0 };
-			strcpy_s(szTmp2, sizeof(szTmp2), szTmp);
+			int suffixindice = tmpStr.length() - closingposition;
+			tmpStr.remove_suffix(suffixindice);
+		}
 
-			TruncateSpellRankName(szTmp2);
-			pSpellSearch->triggername = szTmp2;
-		}
-		else
-		{
-			pSpellSearch->triggername = tmpStr;
-		}
+		pSpellSearch->triggername = tmpStr;
+
 	}
 	return true;
 }

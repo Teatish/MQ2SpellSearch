@@ -61,8 +61,9 @@ public:
 	bool		ShowAll = defShowAll;
 	int			Reflectable = -1;
 	int			Feedbackable = -1;
-	float		Range = -1;
-	float		AERange = -1;
+	double		MinRange = -1;
+	double		MaxRange = -1;
+	double		AERange = -1;
 	int			SpreadRadius = -1;
 	int			PushBack = -1;
 	int			PushUp = -1;
@@ -78,6 +79,9 @@ public:
 	int			CastTimeMax = -1;
 	int			RecastTimeMin = -1;
 	int			RecastTimeMax = -1;
+	std::string AltAbility = "";
+	int			nAltAbility = -1;
+	bool		AltAbilityFilter = false;
 
 	// Use to search through spelleffects for keyword or phrase.
 	std::string SpellEffect = "";
@@ -128,7 +132,8 @@ public:
 
 			Reflectable == pOther.Reflectable &&
 			Feedbackable == pOther.Feedbackable &&
-			Range == pOther.Range &&
+			MinRange == pOther.MinRange &&
+			MaxRange == pOther.MaxRange &&
 			AERange == pOther.AERange &&
 			SpreadRadius == pOther.SpreadRadius &&
 			PushBack == pOther.PushBack &&
@@ -145,6 +150,9 @@ public:
 			CastTimeMax == pOther.CastTimeMax &&
 			RecastTimeMin == pOther.RecastTimeMin &&
 			RecastTimeMax == pOther.RecastTimeMax &&
+			AltAbility == pOther.AltAbility &&
+			nAltAbility == pOther.nAltAbility &&
+			AltAbilityFilter == pOther.AltAbilityFilter &&
 			SpellEffect == pOther.SpellEffect &&
 			bSpellEffectMod == pOther.bSpellEffectMod &&
 			SPA == pOther.SPA &&
@@ -176,7 +184,8 @@ public:
 
 			Reflectable != pOther.Reflectable ||
 			Feedbackable != pOther.Feedbackable ||
-			Range != pOther.Range ||
+			MinRange != pOther.MinRange ||
+			MaxRange != pOther.MaxRange ||
 			AERange != pOther.AERange ||
 			SpreadRadius != pOther.SpreadRadius ||
 			PushBack != pOther.PushBack ||
@@ -193,7 +202,9 @@ public:
 			CastTimeMax != pOther.CastTimeMax ||
 			RecastTimeMin != pOther.RecastTimeMin ||
 			RecastTimeMax != pOther.RecastTimeMax ||
-
+			AltAbility != pOther.AltAbility ||
+			nAltAbility != pOther.nAltAbility ||
+			AltAbilityFilter != pOther.AltAbilityFilter ||
 			SpellEffect != pOther.SpellEffect ||
 			bSpellEffectMod != pOther.bSpellEffectMod ||
 			SPA != pOther.SPA ||
@@ -230,7 +241,8 @@ public:
 
 		Reflectable = pOther.Reflectable;
 		Feedbackable = pOther.Feedbackable;
-		Range = pOther.Range;
+		MinRange = pOther.MinRange;
+		MaxRange = pOther.MaxRange;
 		AERange = pOther.AERange;
 		SpreadRadius = pOther.SpreadRadius;
 		PushBack = pOther.PushBack;
@@ -247,7 +259,9 @@ public:
 		CastTimeMax = pOther.CastTimeMax;
 		RecastTimeMin = pOther.RecastTimeMin;
 		RecastTimeMax = pOther.RecastTimeMax;
-
+		AltAbility = pOther.AltAbility;
+		nAltAbility = pOther.nAltAbility;
+		AltAbilityFilter = pOther.AltAbilityFilter;
 		SpellEffect = pOther.SpellEffect;
 		bSpellEffectMod = pOther.bSpellEffectMod;
 		SPA = pOther.SPA;
@@ -293,7 +307,8 @@ public:
 		WriteChatf("ShowData :: ShowAll                 [%d]", ShowAll);
 		WriteChatf("ShowData :: Reflectable             [%i]", Reflectable);
 		WriteChatf("ShowData :: Feedbackable            [%i]", Feedbackable);
-		WriteChatf("ShowData :: Range                   [%4.2f]", Range);
+		WriteChatf("ShowData :: MinRange                [%4.2f]", MinRange);
+		WriteChatf("ShowData :: MaxRange                [%4.2f]", MaxRange);
 		WriteChatf("ShowData :: AERange                 [%4.2f]", AERange);
 		WriteChatf("ShowData :: SpreadRadius            [%i]", SpreadRadius);
 		WriteChatf("ShowData :: PushBack                [%i]", PushBack);
@@ -354,7 +369,8 @@ public:
 
 		Reflectable = -1;
 		Feedbackable = -1;
-		Range = -1;
+		MinRange = -1;
+		MaxRange = -1;
 		AERange = -1;
 		SpreadRadius = -1;
 		PushBack = -1;
@@ -373,6 +389,9 @@ public:
 		CastTimeMax = -1;
 		RecastTimeMin = -1;
 		RecastTimeMax = -1;
+		AltAbility = "";
+		nAltAbility = -1;
+		AltAbilityFilter = false;
 
 		SPA = "";
 		nSPA = -1;
