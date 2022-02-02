@@ -1160,18 +1160,12 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 			{
 				iSrchLevel = 1;
 				NumParams++;
-				int MinLevelValue = 1;
-				int MaxLevelValue = 1;
+				int MinLevelValue = psSearchSpells.MinLevel > 1 ? psSearchSpells.MinLevel : 1;
+				int MaxLevelValue = psSearchSpells.MaxLevel > 1 ? psSearchSpells.MaxLevel : GetPcProfile()->Level;
 
-				if (psSearchSpells.ShowAll)
+				if (psSearchSpells.Debug)
 				{
-					int MinLevelValue = 1;
-					int MaxLevelValue = 255;
-				}
-				else
-				{
-					MinLevelValue = psSearchSpells.MinLevel > 1 ? psSearchSpells.MinLevel : 1;
-					MaxLevelValue = psSearchSpells.MaxLevel > 1 ? psSearchSpells.MaxLevel : GetPcProfile()->Level;
+					WriteChatf("DEBUG :: FindSpells: ClassLevel: %i MinLevel: %i MaxLevel: %i", ClassLevel, MinLevelValue, MaxLevelValue);
 				}
 
 				if (ClassLevel < MinLevelValue || ClassLevel > MaxLevelValue) continue;
@@ -1941,7 +1935,8 @@ bool MQ2SpellSearchType::GetSpellSearchState(std::string_view query)
 		pSpellSearch->name = vTempList.at(recordID)->Name;
 	}
 
-	pSpellSearch->level = vTempList.at(recordID)->ClassLevel[pProfile->Level];
+	// pSpellSearch->level = vTempList.at(recordID)->ClassLevel[pProfile->Level];
+	pSpellSearch->level = vTempList.at(recordID)->ClassLevel[GetPcProfile()->Class];
 	pSpellSearch->category = vTempList.at(recordID)->Category;
 	pSpellSearch->subcategory = vTempList.at(recordID)->Subcategory;
 	pSpellSearch->subcategory2 = vTempList.at(recordID)->Subcategory2;
