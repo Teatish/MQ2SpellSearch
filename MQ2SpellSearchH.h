@@ -46,6 +46,8 @@ public:
 	std::string Name = "";
 	std::string PartialName = "";
 	std::string Class = "";
+	int			ClassID = -1;
+	bool		ClassFlag = false;
 	int         MinLevel = 1;
 	int         MaxLevel = 1;
 	std::string Category = "";
@@ -93,11 +95,11 @@ public:
 	int			nSPA = -1;
 	// Assumes a match is wanted. False means not found anywhere.
 	bool		bSPAMod = true;
-	
+
 	// Partial match in the Extra field for procs, etc
 	std::string Extra = "";
 
-	// Configuration settings - filters
+	// Configuration settings - filters/views
 	bool CanScribe = defCanScribe;
 	bool ShowSpellEffects = defShowSpellEffects;
 	bool ShowMissingSpellsOnly = defShowMissingSpellsOnly;
@@ -108,6 +110,8 @@ public:
 	int  VectorRecord = defVectorRecord;
 	bool IgnoreRank = defIgnoreRank;
 	int	 TriggerIndex = -1;
+	bool WikiTableFormat = false;
+	bool CleanFormat = false;
 
 	bool Debug = defDebug;
 
@@ -119,6 +123,8 @@ public:
 			Name == pOther.Name &&
 			PartialName == pOther.PartialName &&
 			Class == pOther.Class &&
+			ClassID == pOther.ClassID &&
+			ClassFlag == pOther.ClassFlag &&
 			MinLevel == pOther.MinLevel &&
 			MaxLevel == pOther.MaxLevel &&
 			Category == pOther.Category &&
@@ -171,6 +177,9 @@ public:
 			Name != pOther.Name ||
 			PartialName != pOther.PartialName ||
 			Class != pOther.Class ||
+			ClassID != pOther.ClassID ||
+			ClassFlag != pOther.ClassFlag ||
+			ClassFlag != pOther.ClassFlag ||
 			MinLevel != pOther.MinLevel ||
 			MaxLevel != pOther.MaxLevel ||
 			Category != pOther.Category ||
@@ -225,6 +234,8 @@ public:
 		Name = pOther.Name;
 		PartialName = pOther.PartialName;
 		Class = pOther.Class;
+		ClassID = pOther.ClassID;
+		ClassFlag = pOther.ClassFlag;
 		MinLevel = pOther.MinLevel;
 		MaxLevel = pOther.MaxLevel;
 		Category = pOther.Category;
@@ -283,6 +294,8 @@ public:
 		VectorRecord = pOther.VectorRecord;
 		IgnoreRank = pOther.IgnoreRank;
 		TriggerIndex = pOther.TriggerIndex;
+		WikiTableFormat = pOther.WikiTableFormat;
+		CleanFormat = pOther.CleanFormat;
 		Debug = pOther.Debug;
 	}
 
@@ -293,6 +306,8 @@ public:
 		WriteChatf("ShowData :: Name                    [%s]", Name.c_str());
 		WriteChatf("ShowData :: PartialName             [%s]", PartialName.c_str());
 		WriteChatf("ShowData :: Class                   [%s]", Class.c_str());
+		WriteChatf("ShowData :: ClassID                 [%i]", ClassID);
+		WriteChatf("ShowData :: ClassFlag               [%d]", ClassFlag);
 		WriteChatf("ShowData :: MinLevel                [%i]", MinLevel);
 		WriteChatf("ShowData :: MaxLevel                [%i]", MaxLevel);
 		WriteChatf("ShowData :: Category                [%s]", Category.c_str());
@@ -332,16 +347,18 @@ public:
 
 	void ShowView()
 	{
-		WriteChatf("ShowView :: CanScribe               [%i]", CanScribe);
-		WriteChatf("ShowView :: ShowSpellEffects        [%i]", ShowSpellEffects);
-		WriteChatf("ShowView :: ShowMissingSpellsOnly   [%i]", ShowMissingSpellsOnly);
-		WriteChatf("ShowView :: ShowReverse             [%i]", ShowReverse);
-		WriteChatf("ShowView :: ShowFirstRecord         [%i]", ShowFirstRecord);
-		WriteChatf("ShowView :: ShowLastRecord          [%i]", ShowLastRecord);
-		WriteChatf("ShowView :: ShowDetailedOutput      [%i]", ShowDetailedOutput);
+		WriteChatf("ShowView :: CanScribe               [%d]", CanScribe);
+		WriteChatf("ShowView :: ShowSpellEffects        [%d]", ShowSpellEffects);
+		WriteChatf("ShowView :: ShowMissingSpellsOnly   [%d]", ShowMissingSpellsOnly);
+		WriteChatf("ShowView :: ShowReverse             [%d]", ShowReverse);
+		WriteChatf("ShowView :: ShowFirstRecord         [%d]", ShowFirstRecord);
+		WriteChatf("ShowView :: ShowLastRecord          [%d]", ShowLastRecord);
+		WriteChatf("ShowView :: ShowDetailedOutput      [%d]", ShowDetailedOutput);
 		WriteChatf("ShowView :: VectorRecord            [%i]", VectorRecord);
-		WriteChatf("ShowView :: IgnoreRank              [%i]", IgnoreRank);
+		WriteChatf("ShowView :: IgnoreRank              [%d]", IgnoreRank);
 		WriteChatf("ShowView :: TriggerIndex            [%i]", TriggerIndex);
+		WriteChatf("ShowView :: WikiTableFormat         [%d]", WikiTableFormat);
+		WriteChatf("ShowView :: CleanFormat             [%d]", CleanFormat);
 		WriteChatf("ShowView :: Debug                   [%i]", Debug);
 	}
 
@@ -353,6 +370,8 @@ public:
 		Name = "";
 		PartialName = "";
 		Class = "";
+		ClassID = -1;
+		ClassFlag = false;
 		MinLevel = 1;
 		MaxLevel = 1;
 		Category = "";
@@ -408,9 +427,100 @@ public:
 		VectorRecord = defVectorRecord;
 		IgnoreRank = defIgnoreRank;
 		TriggerIndex = -1;
+		WikiTableFormat = false;
+		CleanFormat = false;
 		Debug = defDebug;
 	}
 };
+
+std::unordered_map<std::string, int> m_ClassNameAcronym =
+{
+	{"000",              0},
+	{"WAR",              1},
+	{"CLR",              2},
+	{"PAL",              3},
+	{"RNG",              4},
+	{"SHD",              5},
+	{"DRU",              6},
+	{"MNK",              7},
+	{"BRD",              8},
+	{"ROG",              9},
+	{"SHM",              10},
+	{"NEC",              11},
+	{"WIZ",              12},
+	{"MAG",              13},
+	{"ENC",              14},
+	{"BST",              15},
+	{"BER",              16},
+};
+
+std::string ClassName[] =
+{
+	"Any",              //-1,
+	"Warrior",          //1,
+	"Cleric",           //2,
+	"Paladin",          //3,
+	"Ranger",           //4,
+	"Shadow Knight",    //5,
+	"Druid",            //6,
+	"Monk",             //7,
+	"Bard",             //8,
+	"Rogue",            //9,
+	"Shaman",           //10,
+	"Necromancer",      //11,
+	"Wizard",           //12,
+	"Magician",         //13,
+	"Enchanter",        //14,
+	"Beastlord",        //15,
+	"Berserker",        //16,
+};
+
+std::string ClassNameAcronym[] =
+{
+	"Any",              //-1,
+	"WAR",              //1,
+	"CLR",              //2,
+	"PAL",              //3,
+	"RNG",              //4,
+	"SHD",              //5,
+	"DRU",              //6,
+	"MNK",              //7,
+	"BRD",              //8,
+	"ROG",              //9,
+	"SHM",              //10,
+	"NEC",              //11,
+	"WIZ",              //12,
+	"MAG",              //13,
+	"ENC",              //14,
+	"BST",              //15,
+	"BER",              //16,
+};
+
+/*
+struct
+{
+	char* name;
+	int classn;
+} classes[] = {
+	"any",              -1,
+	"bard",             8,
+	"beastlord",        15,
+	"berserker",        16,
+	"cleric",           2,
+	"druid",            6,
+	"enchanter",        14,
+	"magician",         13,
+	"monk",             7,
+	"necromancer",      11,
+	"paladin",          3,
+	"ranger",           4,
+	"rogue",            9,
+	"shadow knight",    5,
+	"shaman",           10,
+	"warrior",          1,
+	"wizard",           12,
+};
+*/
 
 std::string TargetTypeAcronym[] =
 {
@@ -559,6 +669,20 @@ std::unordered_map<std::string, int> m_TargetTypeAcronym =
 
 \ax = previous color (if no previous \a? this would be the default mq2 color)
 */
+
+std::string eResistTypereversed[] =
+{
+	"None",
+	"Magic",
+	"Fire",
+	"Cold",
+	"Poison",
+	"Disease",
+	"Chromatic",
+	"Prismatic",
+	"Physical",
+	"Corruption",
+};
 
 /*
  No currently built in method to reverse key value enumeration lookup, so did it the old fashioned way.

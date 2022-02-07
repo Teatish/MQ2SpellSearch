@@ -51,7 +51,8 @@ public:
 	*/
 	void MQ2SpellSearchType::OutputResultsCMD(SpellSearch& psSpellSearch, std::vector<PSPELL>& pvMatchList);
 	void MQ2SpellSearchType::OutputResultConsole(SpellSearch& psSearchSpells, PSPELL& pthisSpell);
-	void MQ2SpellSearchType::DumpPSpellMembers(PSPELL& pSpell);
+	void MQ2SpellSearchType::OutputWikiTable(SpellSearch& psSearchSpells, PSPELL& pthisSpell);
+	void MQ2SpellSearchType::DumpPSpellMembers(SpellSearch& psSearchSpells, PSPELL& pSpell);
 	void MQ2SpellSearchType::ShowCMDHelp();
 
 };
@@ -301,7 +302,7 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return GetNextArg(szRest, 1);
 		}
 
-		if (!_stricmp(szArg, "PartialName") || !_stricmp(szArg, "-partialname") || !_stricmp(szArg, "pname") || !_stricmp(szArg, "-pname") || !_stricmp(szArg, "-pn"))
+		if (!_stricmp(szArg, "PartialName") || !_stricmp(szArg, "-partialname") || !_stricmp(szArg, "pn") || !_stricmp(szArg, "-pn"))
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.PartialName = szArg;
@@ -326,6 +327,14 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.SubCategory2 = szArg;
+			return GetNextArg(szRest, 1);
+		}
+
+		if (!_stricmp(szArg, "Class") || !_stricmp(szArg, "-class"))
+		{
+			GetArg(szArg, szRest, 1);
+			psSpellSearch.Class = szArg;
+			psSpellSearch.ClassFlag = true;
 			return GetNextArg(szRest, 1);
 		}
 
@@ -389,12 +398,15 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return GetNextArg(szRest, 1);
 		}
 
+		/*
+		* Not implemented in this way
 		if (!_stricmp(szArg, "Timer") || !_stricmp(szArg, "-timer"))
 		{
 			GetArg(szArg, szRest, 1);
 			psSpellSearch.Timer = atoi(szArg);
 			return GetNextArg(szRest, 1);
 		}
+		*/
 
 		// Flag to restrict to alternate abilities, those spells which do not have a level or categories
 		if (!_stricmp(szArg, "AltAbility") || !_stricmp(szArg, "-altability") || !_stricmp(szArg, "-aa"))
@@ -528,9 +540,7 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 
 		// View - if it finds a number then it assumes thats the spell you want in the list
 		// A specified spell will not be filtered any further.
-		if (!_stricmp(szArg, "Record") || !_stricmp(szArg, "-record") ||
-			!_stricmp(szArg, "Show") || !_stricmp(szArg, "-show")
-			)
+		if (!_stricmp(szArg, "Record") || !_stricmp(szArg, "-record"))
 		{
 			GetArg(szArg, szRest, 1);
 			if (!_stricmp(szArg, "last"))
@@ -568,13 +578,13 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 
 		// Default behavior is that only spells a character has will be shown unless -all is also
 		// given as a parameter.
-		if (!_stricmp(szArg, "Missing") || !_stricmp(szArg, "-missing") || !_stricmp(szArg, "-miss"))
+		if (!_stricmp(szArg, "Missing") || !_stricmp(szArg, "-missing"))
 		{
 			psSpellSearch.ShowMissingSpellsOnly = true;
 			return szRest;
 		}
 
-		if (!_stricmp(szArg, "Reflectable") || !_stricmp(szArg, "-reflectable") || !_stricmp(szArg, "-reflect"))
+		if (!_stricmp(szArg, "Reflect") || !_stricmp(szArg, "-reflect"))
 		{
 			GetArg(szArg, szRest, 1);
 			if (!_stricmp(szArg, "yes") || !_stricmp(szArg, "true") || !_stricmp(szArg, "1"))
@@ -588,7 +598,7 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return GetNextArg(szRest, 1);
 		}
 
-		if (!_stricmp(szArg, "Feedbackable") || !_stricmp(szArg, "-feedbackable") || !_stricmp(szArg, "-feedback"))
+		if (!_stricmp(szArg, "Feedback") || !_stricmp(szArg, "-feedback"))
 		{
 			GetArg(szArg, szRest, 1);
 			if (!_stricmp(szArg, "yes") || !_stricmp(szArg, "true") || !_stricmp(szArg, "1"))
@@ -714,6 +724,18 @@ char* MQ2SpellSearchType::ParseSpellSearchArgs(char* szArg, char* szRest, SpellS
 			return GetNextArg(szRest, 1);
 		}
 
+		if (!_stricmp(szArg, "WikiTable") || !_stricmp(szArg, "-WikiTable"))
+		{
+			psSpellSearch.WikiTableFormat = true;
+			return szRest;
+		}
+
+		if (!_stricmp(szArg, "Clean") || !_stricmp(szArg, "-clean"))
+		{
+			psSpellSearch.CleanFormat = true;
+			return szRest;
+		}
+
 		// If we get here, then we did not find a matching parameter. Let's assume its the spell unless
 		// it or partialname have been set. If they enclosed the name with quotes, then it will all be in
 		// szArg which will loop until done.
@@ -795,6 +817,12 @@ SpellSearch MQ2SpellSearchType::ParseSpellSearch(const char* Buffer)
 		int tmp = psSpellSearch.RecastTimeMax;
 		psSpellSearch.RecastTimeMax = psSpellSearch.RecastTimeMin;
 		psSpellSearch.RecastTimeMin = tmp;
+	}
+
+	if (psSpellSearch.IgnoreClass)
+	{
+		psSpellSearch.Class = "";
+		psSpellSearch.ClassFlag = false;
 	}
 
 	if (psSpellSearch.AltAbilityFilter)
@@ -918,6 +946,22 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 		*/
 	}
 
+	if (psSearchSpells.ClassFlag) {
+		
+		for (size_t i = 0; i < psSearchSpells.Class.length(); ++i)
+		{
+			psSearchSpells.Class[i] = toupper(psSearchSpells.Class[i]);
+		}
+		psSearchSpells.ClassID = m_ClassNameAcronym[psSearchSpells.Class];
+	}
+	else
+	{
+		psSearchSpells.ClassID = GetPcProfile()->Class;
+		psSearchSpells.Class = ClassNameAcronym[psSearchSpells.ClassID];
+	}
+
+	uint8_t ClassID = psSearchSpells.ClassID;
+
 	// Look for spells that contain given criteria
 	int NextHighestLevelSpellID = 0;
 	int MaxLevelSpellID = 0;
@@ -945,6 +989,7 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 	int iSrchPushUp = 0;
 	int iSrchCastTime = 0;
 	int iSrchRecastTime = 0;
+	int iSrchClass = 0;
 	int iSrchExtra = 0;
 
 	int iSpells = sizeof(pSpellMgr->Spells);
@@ -981,6 +1026,7 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 		iSrchPushUp = 0;
 		iSrchCastTime = 0;
 		iSrchRecastTime = 0;
+		iSrchClass = 0;
 		iSrchExtra = 0;
 
 		thisSpell = pSpellMgr->GetSpellByID(x);
@@ -995,7 +1041,7 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 
 		if (thisSpell->ID == 0) continue;
 
-		int ClassLevel = thisSpell->ClassLevel[GetPcProfile()->Class];
+		int ClassLevel = thisSpell->ClassLevel[ClassID];
 
 		if (!psSearchSpells.IgnoreClass && ClassLevel > 253) continue;
 
@@ -1161,14 +1207,29 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 				iSrchLevel = 1;
 				NumParams++;
 				int MinLevelValue = psSearchSpells.MinLevel > 1 ? psSearchSpells.MinLevel : 1;
-				int MaxLevelValue = psSearchSpells.MaxLevel > 1 ? psSearchSpells.MaxLevel : GetPcProfile()->Level;
+				int MaxLevelValue = 0;
+
+				if (!psSearchSpells.ClassFlag)
+				{
+					MaxLevelValue = psSearchSpells.MaxLevel > 1 ? psSearchSpells.MaxLevel : GetPcProfile()->Level;
+				}
+				else
+				{
+					MaxLevelValue = psSearchSpells.MaxLevel > 1 ? psSearchSpells.MaxLevel : 10000;
+				}
 
 				if (psSearchSpells.Debug)
 				{
-					WriteChatf("DEBUG :: FindSpells: ClassLevel: %i MinLevel: %i MaxLevel: %i", ClassLevel, MinLevelValue, MaxLevelValue);
+					WriteChatf("DEBUG :: FindSpells: Before :: ClassLevel: %i MinLevel: %i MaxLevel: %i", ClassLevel, MinLevelValue, MaxLevelValue);
 				}
 
 				if (ClassLevel < MinLevelValue || ClassLevel > MaxLevelValue) continue;
+
+				if (psSearchSpells.Debug)
+				{
+					WriteChatf("DEBUG :: FindSpells: After :: ClassLevel: %i MinLevel: %i MaxLevel: %i", ClassLevel, MinLevelValue, MaxLevelValue);
+				}
+
 			}
 		}
 
@@ -1292,6 +1353,7 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 							iSrchPushUp +
 							iSrchCastTime +
 							iSrchRecastTime +
+							iSrchClass +
 							iSrchExtra
 						))
 		{
@@ -1305,9 +1367,9 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 	}
 
 	// Sort by spell level - some spells were entered into the spell db at funky record positions.
-	sort(pvMatchList.begin(), pvMatchList.end(), [](PSPELL a, PSPELL b)
+	sort(pvMatchList.begin(), pvMatchList.end(), [ClassID](PSPELL a, PSPELL b)
 		{
-			return (a->ClassLevel[GetPcProfile()->Class] < b->ClassLevel[GetPcProfile()->Class]);
+			return (a->ClassLevel[ClassID] < b->ClassLevel[ClassID]);
 		}
 	);
 
@@ -1321,7 +1383,7 @@ std::vector<PSPELL> MQ2SpellSearchType::FindSpells(SpellSearch& psSearchSpells, 
 		{
 			tempSpell = pvMatchList.at(i);
 
-			WriteChatf("DEBUG :: Record: %i ID: %i Name: %s ClsLev: %i", i, tempSpell->ID, tempSpell->Name, tempSpell->ClassLevel[GetPcProfile()->Class]);
+			WriteChatf("DEBUG :: Record: %i ID: %i Name: %s ClsLev: %i", i, tempSpell->ID, tempSpell->Name, tempSpell->ClassLevel[ClassID]);
 		}
 		WriteChatf("\n");
 	}
@@ -1389,10 +1451,15 @@ bool MQ2SpellSearchType::OutputFilter(SpellSearch& psSearchSpells, PSPELL& thisS
 
 	if (!psSearchSpells.IgnoreClass)
 	{
-		if (thisSpell->ClassLevel[GetPcProfile()->Class] > 253) return false;
+		if (thisSpell->ClassLevel[psSearchSpells.ClassID] > 253) return false;
 	}
 
-	if (!psSearchSpells.ShowAll)
+	if (psSearchSpells.IgnoreRank)
+	{
+		if (ci_find_substr(thisSpell->Name, " Rk")>=0) return false;
+	}
+
+	if (!psSearchSpells.ShowAll && !psSearchSpells.ClassFlag)
 	{
 		if (psSearchSpells.ShowMissingSpellsOnly)
 		{
@@ -1522,11 +1589,12 @@ void MQ2SpellSearchType::OutputResultsCMD(SpellSearch& psSearchSpells, std::vect
 
 	szvMatchList = vTempList.size();
 
+	int ClassID = psSearchSpells.ClassID;
 	if (psSearchSpells.ShowReverse)
 	{
-		sort(vTempList.begin(), vTempList.end(), [](PSPELL a, PSPELL b)
+		sort(vTempList.begin(), vTempList.end(), [ClassID](PSPELL a, PSPELL b)
 			{
-				return (a->ClassLevel[GetPcProfile()->Class] > b->ClassLevel[GetPcProfile()->Class]);
+				return (a->ClassLevel[ClassID] > b->ClassLevel[ClassID]);
 			}
 		);
 	}
@@ -1547,12 +1615,20 @@ void MQ2SpellSearchType::OutputResultsCMD(SpellSearch& psSearchSpells, std::vect
 
 	if (!szvMatchList) return;
 
-	if (!psSearchSpells.ShowDetailedOutput) {
+	if (!psSearchSpells.ShowDetailedOutput && !psSearchSpells.WikiTableFormat)
+	{
 		WriteChatf("\n\awID    \aoLVL \atTARGET     \agSPELL                                \ayCATEGORIES");
 	}
-	else
+
+	if (psSearchSpells.ShowDetailedOutput)
 	{
 		WriteChatf("\n\atRAW SPELL DETAILS");
+		psSearchSpells.WikiTableFormat = false;
+	}
+
+	if (psSearchSpells.WikiTableFormat)
+	{
+		WriteChatf("{| class=\"wikitable\"\n|-\n! ID !! LEVEL !! NAME");
 	}
 
 	for (int x = RecordID - 1; x <= szvMatchList - 1; ++x)
@@ -1560,8 +1636,41 @@ void MQ2SpellSearchType::OutputResultsCMD(SpellSearch& psSearchSpells, std::vect
 		thisSpell = vTempList.at(x);
 		if (thisSpell == nullptr) continue;
 
-		OutputResultConsole(psSearchSpells, thisSpell);
+		if (psSearchSpells.WikiTableFormat)
+		{
+			OutputWikiTable(psSearchSpells, thisSpell);
+		}
+		else
+		{
+			OutputResultConsole(psSearchSpells, thisSpell);
+		}
+	
 	}
+
+	if (psSearchSpells.WikiTableFormat)
+	{
+		WriteChatf("|}");
+	}
+
+	return;
+}
+
+void MQ2SpellSearchType::OutputWikiTable(SpellSearch& psSearchSpells, PSPELL& pthisSpell)
+{
+	// Spell ID goes at end
+	std::string SpellLink = "http://eq.magelo.com/spell/";
+
+	std::string level = std::to_string(pthisSpell->ClassLevel[GetPcProfile()->Class]);
+	if (pthisSpell->ClassLevel[GetPcProfile()->Class] > 253) level = "";
+
+	WriteChatf("|-\n| [%s%i %i] || %s || %s", 
+		SpellLink.c_str(), 
+		pthisSpell->ID, 
+		pthisSpell->ID, 
+		level.c_str(),
+		pthisSpell->Name
+	);
+
 	return;
 }
 
@@ -1569,13 +1678,13 @@ void MQ2SpellSearchType::OutputResultConsole(SpellSearch& psSearchSpells, PSPELL
 {
 	pSpellSearch->spellsshown++;
 
-	std::string level = std::to_string(pthisSpell->ClassLevel[GetPcProfile()->Class]);
-	if (pthisSpell->ClassLevel[GetPcProfile()->Class] > 253) level = "";
+	std::string level = std::to_string(pthisSpell->ClassLevel[psSearchSpells.ClassID]);
+	if (pthisSpell->ClassLevel[psSearchSpells.ClassID] > 253) level = "";
 
 	if (psSearchSpells.ShowDetailedOutput)
 	{
 		std::string strNameColor = "\ag";
-		if (!KnowSpell(pthisSpell->ID)) strNameColor = "\ar!";
+		if (!psSearchSpells.CleanFormat && !KnowSpell(pthisSpell->ID)) strNameColor = "\ar!";
 
 		WriteChatf("\ayID                     \aw:\ao %i \n\ayName                   \aw: %s%s \n\ayClassLevel             \aw:\ao %d",
 			pthisSpell->ID,
@@ -1592,7 +1701,7 @@ void MQ2SpellSearchType::OutputResultConsole(SpellSearch& psSearchSpells, PSPELL
 	else
 	{
 		std::string strNameColor = "\ag ";
-		if (!KnowSpell(pthisSpell->ID)) strNameColor = "\ar!";
+		if (!psSearchSpells.ClassFlag && !psSearchSpells.CleanFormat && !KnowSpell(pthisSpell->ID)) strNameColor = "\ar!";
 
 		WriteChatf("\aw%*d \ao%*s \at%-*s %s%-*s \ay%s -> %s", 5, pthisSpell->ID, 3, level.c_str(), 9, TargetTypeAcronym[pthisSpell->TargetType].c_str(), strNameColor.c_str(), 36, pthisSpell->Name, CategoryNameLookup[pthisSpell->Category].c_str(), CategoryNameLookup[pthisSpell->Subcategory].c_str());
 	}
@@ -1616,12 +1725,12 @@ void MQ2SpellSearchType::OutputResultConsole(SpellSearch& psSearchSpells, PSPELL
 		}
 	}
 
-	if (psSearchSpells.ShowDetailedOutput) DumpPSpellMembers(pthisSpell);
+	if (psSearchSpells.ShowDetailedOutput) DumpPSpellMembers(psSearchSpells, pthisSpell);
 
 	return;
 }
 
-void MQ2SpellSearchType::DumpPSpellMembers(PSPELL& pSpell)
+void MQ2SpellSearchType::DumpPSpellMembers(SpellSearch& psSearchSpells, PSPELL& pSpell)
 {
 	WriteChatf("\ayActorTagID             \aw:\ao %i \n\ayAEDuration             \aw:\ao %u \n\ayAERange                \aw:\ao %4.2f \n\ayAffectInanimate        \aw:\ao %d \n\ayAIValidTargets         \aw:\ao %u",
 		pSpell->ActorTagId,
@@ -1661,13 +1770,7 @@ void MQ2SpellSearchType::DumpPSpellMembers(PSPELL& pSpell)
 		pSpell->CastTime
 	);
 
-	for (int j = 0; j < sizeof(pSpell->ClassLevel); ++j)
-	{
-		if (pSpell->ClassLevel[j] > 0 && pSpell->ClassLevel[j] < 255)
-		{
-			WriteChatf("\ayClassLevel             \aw:\ao %i \aw:\ao %u", j, pSpell->ClassLevel[j]);
-		}
-	}
+	WriteChatf("\ayClassLevel             \aw:\ao %s[%i] \aw:\ao %u", ClassNameAcronym[psSearchSpells.ClassID], psSearchSpells.ClassID, pSpell->ClassLevel[psSearchSpells.ClassID]);
 
 	WriteChatf("\ayConeEndAngle           \aw:\ao %i \n\ayConeStartAngle         \aw:\ao %i \n\ayCountdownHeld          \aw:\ao %d \n\ayCRC32Marker            \aw:\ao %u \n\ayCritChanceOverride     \aw:\ao %i",
 		pSpell->ConeEndAngle,
@@ -1903,11 +2006,13 @@ bool MQ2SpellSearchType::GetSpellSearchState(std::string_view query)
 		return false;
 	}
 
+	uint8_t ClassID = psSearchSpells.ClassID;
+
 	if (psSearchSpells.ShowReverse)
 	{
-		sort(vTempList.begin(), vTempList.end(), [](PSPELL a, PSPELL b)
+		sort(vTempList.begin(), vTempList.end(), [ClassID](PSPELL a, PSPELL b)
 			{
-				return (a->ClassLevel[GetPcProfile()->Class] > b->ClassLevel[GetPcProfile()->Class]);
+				return (a->ClassLevel[ClassID] > b->ClassLevel[ClassID]);
 			}
 		);
 	}
@@ -1919,24 +2024,9 @@ bool MQ2SpellSearchType::GetSpellSearchState(std::string_view query)
 		WriteChatf("recordID %i Records %i", recordID, szvMatchList);
 	}
 	pSpellSearch->id = vTempList.at(recordID)->ID;
-
-	if (pSpellSearch->SearchSpells.IgnoreRank)
-	{
-		const char* szTmp;
-		szTmp = &vTempList.at(recordID)->Name[0];
-		char szTmp2[MAX_STRING] = { 0 };
-		strcpy_s(szTmp2, sizeof(szTmp2), szTmp);
-
-		TruncateSpellRankName(szTmp2);
-		pSpellSearch->name = szTmp2;
-	}
-	else
-	{
-		pSpellSearch->name = vTempList.at(recordID)->Name;
-	}
-
+	pSpellSearch->name = vTempList.at(recordID)->Name;
 	// pSpellSearch->level = vTempList.at(recordID)->ClassLevel[pProfile->Level];
-	pSpellSearch->level = vTempList.at(recordID)->ClassLevel[GetPcProfile()->Class];
+	pSpellSearch->level = vTempList.at(recordID)->ClassLevel[ClassID];
 	pSpellSearch->category = vTempList.at(recordID)->Category;
 	pSpellSearch->subcategory = vTempList.at(recordID)->Subcategory;
 	pSpellSearch->subcategory2 = vTempList.at(recordID)->Subcategory2;
